@@ -4,6 +4,8 @@ import jakarta.persistence.criteria.Path;
 
 /**
  * 
+ * Create a Path from a nested attribute name such as "user.id".
+ * 
  * @Description: PathUtils
  * @Author: Fred Feng
  * @Date: 07/10/2024

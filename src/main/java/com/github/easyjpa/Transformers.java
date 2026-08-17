@@ -10,6 +10,8 @@ import jakarta.persistence.criteria.Selection;
 
 /**
  * 
+ * Transformer utilities, which transform a query result into a map, a list or a bean.
+ * 
  * @Description: Transformers
  * @Author: Fred Feng
  * @Date: 18/10/2024

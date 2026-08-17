@@ -3,6 +3,8 @@ package com.github.easyjpa;
 
 /**
  * 
+ * Called after a transformation to touch up the destination object.
+ * 
  * @Description: TransformerPostHandler
  * @Author: Fred Feng
  * @Date: 18/10/2024

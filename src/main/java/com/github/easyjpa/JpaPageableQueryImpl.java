@@ -9,6 +9,8 @@ import jakarta.persistence.criteria.Selection;
 
 /**
  * 
+ * Transformed result of a pagination.
+ * 
  * @Description: JpaPageableQueryImpl
  * @Author: Fred Feng
  * @Date: 18/10/2024
@@ -18,11 +20,11 @@ public class JpaPageableQueryImpl<T, R> implements PageableQuery<R> {
 
     private final Model<?> model;
     private final CriteriaQuery<T> query;
-    private final CriteriaQuery<Long> counter;
+    private final JpaPageCount<?> counter;
     private final JpaCustomQuery<?> customQuery;
     private final Transformer<T, R> transformer;
 
-    JpaPageableQueryImpl(Model<?> model, CriteriaQuery<T> query, CriteriaQuery<Long> counter,
+    JpaPageableQueryImpl(Model<?> model, CriteriaQuery<T> query, JpaPageCount<?> counter,
             JpaCustomQuery<?> customQuery, Transformer<T, R> transformer) {
         this.model = model;
         this.query = query;
@@ -33,11 +35,7 @@ public class JpaPageableQueryImpl<T, R> implements PageableQuery<R> {
 
     @Override
     public long rowCount() {
-        Long result = customQuery.getSingleResult(builder -> {
-            counter.select(builder.count(builder.toInteger(builder.literal(1))));
-            return counter;
-        });
-        return result != null ? result.longValue() : 0;
+        return counter.rowCount(customQuery);
     }
 
     @Override

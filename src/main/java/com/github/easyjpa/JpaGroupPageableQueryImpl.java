@@ -8,6 +8,8 @@ import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Selection;
 
 /**
+ *
+ * Transformed result of a grouping pagination.
  * 
  * @Description: JpaGroupPageableQueryImpl
  * @Author: Fred Feng
@@ -18,11 +20,11 @@ public class JpaGroupPageableQueryImpl<T, R> implements PageableQuery<R> {
 
     private final Model<?> model;
     private final CriteriaQuery<T> query;
-    private final CriteriaQuery<Long> counter;
+    private final JpaPageCount<?> counter;
     private final JpaCustomQuery<?> customQuery;
     private final Transformer<T, R> transformer;
 
-    JpaGroupPageableQueryImpl(Model<?> model, CriteriaQuery<T> query, CriteriaQuery<Long> counter,
+    JpaGroupPageableQueryImpl(Model<?> model, CriteriaQuery<T> query, JpaPageCount<?> counter,
             JpaCustomQuery<?> customQuery, Transformer<T, R> transformer) {
         this.model = model;
         this.query = query;
@@ -33,11 +35,7 @@ public class JpaGroupPageableQueryImpl<T, R> implements PageableQuery<R> {
 
     @Override
     public long rowCount() {
-        List<Long> list = customQuery.getResultList(builder -> {
-            counter.select(builder.count(builder.toInteger(builder.literal(1))));
-            return counter;
-        });
-        return list != null ? list.size() : 0;
+        return counter.rowCount(customQuery);
     }
 
     @Override

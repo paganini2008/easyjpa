@@ -7,6 +7,8 @@ import jakarta.persistence.criteria.Predicate;
 
 /**
  * 
+ * Filter which turns a Field into a Predicate.
+ * 
  * @Description: FieldFilter
  * @Author: Fred Feng
  * @Date: 18/10/2024

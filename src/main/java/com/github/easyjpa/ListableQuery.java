@@ -35,5 +35,6 @@ public interface ListableQuery<T> {
         return null;
     }
 
+    /** A non positive maxResults means no limit, and a negative firstResult means no offset. */
     List<T> list(int maxResults, long firstResult);
 }

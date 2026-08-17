@@ -6,6 +6,8 @@ import jakarta.persistence.criteria.CriteriaQuery;
 
 /**
  * 
+ * Callback which builds a CriteriaQuery.
+ * 
  * @Description: JpaQueryCallback
  * @Author: Fred Feng
  * @Date: 18/10/2024

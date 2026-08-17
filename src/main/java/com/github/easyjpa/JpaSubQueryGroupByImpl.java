@@ -1,11 +1,17 @@
 
 package com.github.easyjpa;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Selection;
 import jakarta.persistence.criteria.Subquery;
 
 /**
+ * 
+ * Default JpaSubQueryGroupBy implementation.
  * 
  * @Description: JpaSubQueryGroupByImpl
  * @Author: Fred Feng
@@ -40,6 +46,23 @@ public class JpaSubQueryGroupByImpl<X, Y> implements JpaSubQueryGroupBy<X, Y> {
         Expression<Y> expression = field.toExpression(model, builder);
         query.select(expression);
         return this;
+    }
+
+    @Override
+    public JpaSubQueryGroupBy<X, Y> select(ColumnList columnList) {
+        if (columnList != null) {
+            List<Selection<?>> selections = new ArrayList<Selection<?>>();
+            for (Column column : columnList) {
+                selections.add(column.toSelection(model, builder));
+            }
+            JpaProviders.getProvider().multiselect(query, selections);
+        }
+        return this;
+    }
+
+    @Override
+    public Subquery<Y> toSubquery(CriteriaBuilder builder) {
+        return query;
     }
 
 }

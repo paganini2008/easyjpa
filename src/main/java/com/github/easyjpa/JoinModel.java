@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import jakarta.persistence.criteria.From;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Path;
@@ -12,7 +13,9 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Selection;
 import jakarta.persistence.metamodel.EntityType;
+import jakarta.persistence.metamodel.Attribute;
 import jakarta.persistence.metamodel.Metamodel;
+import jakarta.persistence.metamodel.PluralAttribute;
 import jakarta.persistence.metamodel.SingularAttribute;
 
 /**
@@ -35,7 +38,11 @@ public class JoinModel<X, Y> implements Model<Y> {
         this.alias = alias;
         this.metamodel = metamodel;
         this.model = model;
-        TableAlias.put(getType(), alias);
+    }
+
+    /** Add the on condition after the join is established, so that it can refer to this join. */
+    void on(Predicate predicate) {
+        join.on(predicate);
     }
 
     @Override
@@ -46,7 +53,11 @@ public class JoinModel<X, Y> implements Model<Y> {
     @Override
     @SuppressWarnings("unchecked")
     public Class<Y> getType() {
-        return (Class<Y>) join.getAttribute().getJavaType();
+        Attribute<?, ?> attribute = join.getAttribute();
+        // A plural attribute is typed by its collection, so the entity behind it is the element
+        return attribute instanceof PluralAttribute
+                ? (Class<Y>) ((PluralAttribute<?, ?, ?>) attribute).getElementType().getJavaType()
+                : (Class<Y>) attribute.getJavaType();
     }
 
     @Override
@@ -84,6 +95,21 @@ public class JoinModel<X, Y> implements Model<Y> {
     @Override
     public Root<?> getRoot() {
         return model.getRoot();
+    }
+
+    @Override
+    public From<?, ?> getFrom() {
+        return join;
+    }
+
+    @Override
+    public String aliasOf(String className) {
+        return getType().getName().equals(className) ? alias : model.aliasOf(className);
+    }
+
+    @Override
+    public From<?, ?> getFrom(String alias) {
+        return this.alias.equals(alias) ? join : model.getFrom(alias);
     }
 
     @Override

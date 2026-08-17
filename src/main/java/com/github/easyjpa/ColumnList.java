@@ -32,7 +32,7 @@ public class ColumnList extends ArrayList<Column> {
     }
 
     @SafeVarargs
-    public <X> ColumnList(SerializedFunction<X, ?>... functions) {
+    public <X> ColumnList(SerializableFunction<X, ?>... functions) {
         if (functions != null && functions.length > 0) {
             addColumns(functions);
         }
@@ -84,7 +84,7 @@ public class ColumnList extends ArrayList<Column> {
     }
 
     @SafeVarargs
-    public final <X> ColumnList addColumns(SerializedFunction<X, ?>... functions) {
+    public final <X> ColumnList addColumns(SerializableFunction<X, ?>... functions) {
         addAll(List.of(functions).stream().map(f -> Column.forName(f, null)).toList());
         return this;
     }

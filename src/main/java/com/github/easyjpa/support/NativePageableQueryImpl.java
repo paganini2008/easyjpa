@@ -9,6 +9,8 @@ import jakarta.persistence.Query;
 
 /**
  * 
+ * Pagination of a native sql query.
+ * 
  * @Description: NativePageableQueryImpl
  * @Author: Fred Feng
  * @Date: 21/08/2021
@@ -57,7 +59,7 @@ public class NativePageableQueryImpl<E> implements PageableQuery<E> {
             }
         }
         Object result = query.getSingleResult();
-        return result instanceof Number ? ((Number) result).intValue() : 0;
+        return result instanceof Number ? ((Number) result).longValue() : 0L;
     }
 
     protected String getCountQuerySqlString(String sql) {

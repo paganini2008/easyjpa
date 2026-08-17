@@ -15,6 +15,8 @@ import jakarta.persistence.Tuple;
 
 /**
  * 
+ * Default EntityDao implementation.
+ * 
  * @Description: EntityDaoSupport
  * @Author: Fred Feng
  * @Date: 18/10/2024
@@ -34,6 +36,7 @@ public abstract class EntityDaoSupport<E, ID> extends JpaDaoSupport<E, ID>
     public boolean exists(Filter filter) {
         return count(filter) > 0;
     }
+
 
     @Override
     public long count(Filter filter) {

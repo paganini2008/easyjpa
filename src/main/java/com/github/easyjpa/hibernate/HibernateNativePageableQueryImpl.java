@@ -7,7 +7,6 @@ import org.hibernate.Session;
 import org.hibernate.query.NativeQuery;
 import org.springframework.data.jpa.repository.query.QueryUtils;
 import com.github.easyjpa.page.PageableQuery;
-import com.github.easyjpa.support.QueryResultSetExtractor;
 import jakarta.persistence.EntityManager;
 
 /**
@@ -64,7 +63,7 @@ public class HibernateNativePageableQueryImpl<T> implements PageableQuery<T> {
         Optional<?> op = query.uniqueResultOptional();
         if (op.isPresent()) {
             Object result = op.get();
-            return result instanceof Number ? ((Number) result).intValue() : 0;
+            return result instanceof Number ? ((Number) result).longValue() : 0L;
         }
         return 0;
     }

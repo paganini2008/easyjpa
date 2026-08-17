@@ -5,6 +5,8 @@ import com.github.easyjpa.ListableQuery;
 
 /**
  * 
+ * A query which can be paginated.
+ * 
  * @Description: PageableQuery
  * @Author: Fred Feng
  * @Date: 08/10/2024

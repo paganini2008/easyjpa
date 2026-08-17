@@ -7,6 +7,8 @@ import jakarta.persistence.criteria.CriteriaQuery;
 
 /**
  * 
+ * Result set of a non grouping pagination.
+ * 
  * @Description: JpaPageResultSetImpl
  * @Author: Fred Feng
  * @Date: 20/10/2024
@@ -16,10 +18,10 @@ public class JpaPageResultSetImpl<T> implements JpaPageResultSet<T> {
 
     private final Model<?> model;
     private final CriteriaQuery<T> query;
-    private final CriteriaQuery<Long> counter;
+    private final JpaPageCount<?> counter;
     private final JpaCustomQuery<?> customQuery;
 
-    JpaPageResultSetImpl(Model<?> model, CriteriaQuery<T> query, CriteriaQuery<Long> counter,
+    JpaPageResultSetImpl(Model<?> model, CriteriaQuery<T> query, JpaPageCount<?> counter,
             JpaCustomQuery<?> customQuery) {
         this.model = model;
         this.query = query;
@@ -34,11 +36,7 @@ public class JpaPageResultSetImpl<T> implements JpaPageResultSet<T> {
 
     @Override
     public long rowCount() throws Exception {
-        Long result = customQuery.getSingleResult(builder -> {
-            counter.select(builder.count(builder.toInteger(builder.literal(1))));
-            return counter;
-        });
-        return result != null ? result.intValue() : 0;
+        return counter.rowCount(customQuery);
     }
 
     @Override

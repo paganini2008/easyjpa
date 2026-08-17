@@ -4,6 +4,8 @@ import org.springframework.core.convert.support.DefaultConversionService;
 
 /**
  * 
+ * Value conversion between the query result and the required java type.
+ * 
  * @Description: ConvertUtils
  * @Author: Fred Feng
  * @Date: 23/03/2025

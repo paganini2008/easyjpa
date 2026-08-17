@@ -5,6 +5,7 @@ import java.util.List;
 import com.github.easyjpa.LambdaUtils.LambdaInfo;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Selection;
+import jakarta.persistence.criteria.Subquery;
 
 /**
  * 
@@ -16,6 +17,8 @@ import jakarta.persistence.criteria.Selection;
  */
 @FunctionalInterface
 public interface Column {
+
+    /** A Column is an aliased select item, whereas a {@link Field} is a bare expression. */
 
     Selection<?> toSelection(Model<?> model, CriteriaBuilder builder);
 
@@ -36,20 +39,23 @@ public interface Column {
     }
 
     @SuppressWarnings("unchecked")
-    static <E, T> Column forName(SerializedFunction<E, ?> sf, Class<T> requiredType) {
+    static <E, T> Column forName(SerializableFunction<E, ?> sf, Class<T> requiredType) {
         LambdaInfo info = LambdaUtils.inspect(sf);
-        String alias = TableAlias.get(info.getClassName());
-        return new Property<T>(alias, info.getAttributeName(),
-                requiredType != null ? requiredType : (Class<T>) info.getAttributeType())
-                        .as(info.getAttributeName());
+        return Property.<E, T>forName(sf, requiredType).as(info.getAttributeName());
     }
 
     static Column forSubQuery(SubQueryBuilder<?> subQueryBuilder) {
+        return forSubQuery(subQueryBuilder, null);
+    }
+
+    /** Select a scalar subquery as one column, which has to return a single value. */
+    static Column forSubQuery(SubQueryBuilder<?> subQueryBuilder, String alias) {
         return new Column() {
 
             @Override
             public Selection<?> toSelection(Model<?> model, CriteriaBuilder builder) {
-                return subQueryBuilder.toSubquery(builder).getSelection();
+                Subquery<?> subquery = subQueryBuilder.toSubquery(builder);
+                return alias != null ? subquery.alias(alias) : subquery;
             }
         };
     }

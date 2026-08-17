@@ -52,7 +52,7 @@ public class Function<T> implements Field<T> {
         Field<?>[] fields = new Field[attributeNames.length];
         int i = 0;
         for (String attributeName : attributeNames) {
-            fields[i] = Property.forName(null, attributeName);
+            fields[i++] = Property.forName(null, attributeName);
         }
         return new Function<T>(represent, resultClass, fields);
     }
@@ -64,7 +64,7 @@ public class Function<T> implements Field<T> {
 
     @SafeVarargs
     public static <X, T> Function<T> build(String functionName, Class<T> resultClass,
-            SerializedFunction<X, ?>... functions) {
+            SerializableFunction<X, ?>... functions) {
         return new Function<T>(functionName, resultClass, Arrays.stream(functions)
                 .map(fun -> Property.forName(fun)).toArray(l -> new Field<?>[l]));
     }

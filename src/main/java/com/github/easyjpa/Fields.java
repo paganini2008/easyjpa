@@ -138,13 +138,13 @@ public abstract class Fields {
         };
     }
 
-    public static <E, T extends Number> Field<T> plus(SerializedFunction<E, T> leftFunction,
-            SerializedFunction<E, T> rightFunction) {
+    public static <E, T extends Number> Field<T> plus(SerializableFunction<E, T> leftFunction,
+                                                      SerializableFunction<E, T> rightFunction) {
         return plus(Property.forName(leftFunction), Property.forName(rightFunction));
     }
 
-    public static <E, T extends Number> Field<T> plus(SerializedFunction<E, T> leftFunction,
-            Field<T> rightField) {
+    public static <E, T extends Number> Field<T> plus(SerializableFunction<E, T> leftFunction,
+                                                      Field<T> rightField) {
         return plus(Property.forName(leftFunction), rightField);
     }
 
@@ -163,8 +163,8 @@ public abstract class Fields {
         };
     }
 
-    public static <E, T extends Number> Field<T> plusValue(SerializedFunction<E, T> leftFunction,
-            T value) {
+    public static <E, T extends Number> Field<T> plusValue(SerializableFunction<E, T> leftFunction,
+                                                           T value) {
         return plusValue(Property.forName(leftFunction), value);
     }
 
@@ -182,13 +182,13 @@ public abstract class Fields {
         };
     }
 
-    public static <E, T extends Number> Field<T> minus(SerializedFunction<E, T> leftfFunction,
-            SerializedFunction<E, T> rightFunction) {
+    public static <E, T extends Number> Field<T> minus(SerializableFunction<E, T> leftfFunction,
+                                                       SerializableFunction<E, T> rightFunction) {
         return minus(Property.forName(leftfFunction), Property.forName(rightFunction));
     }
 
-    public static <E, T extends Number> Field<T> minus(SerializedFunction<E, T> leftFunction,
-            Field<T> rightField) {
+    public static <E, T extends Number> Field<T> minus(SerializableFunction<E, T> leftFunction,
+                                                       Field<T> rightField) {
         return minus(Property.forName(leftFunction), rightField);
     }
 
@@ -207,8 +207,8 @@ public abstract class Fields {
         };
     }
 
-    public static <E, T extends Number> Field<T> minusValue(SerializedFunction<E, T> field,
-            T value) {
+    public static <E, T extends Number> Field<T> minusValue(SerializableFunction<E, T> field,
+                                                            T value) {
         return minusValue(Property.forName(field), value);
     }
 
@@ -226,13 +226,13 @@ public abstract class Fields {
         };
     }
 
-    public static <E, T extends Number> Field<T> multiply(SerializedFunction<E, T> leftFunction,
-            SerializedFunction<E, T> rightfFunction) {
+    public static <E, T extends Number> Field<T> multiply(SerializableFunction<E, T> leftFunction,
+                                                          SerializableFunction<E, T> rightfFunction) {
         return multiply(Property.forName(leftFunction), Property.forName(rightfFunction));
     }
 
-    public static <E, T extends Number> Field<T> multiply(SerializedFunction<E, T> leftFunction,
-            Field<T> rightField) {
+    public static <E, T extends Number> Field<T> multiply(SerializableFunction<E, T> leftFunction,
+                                                          Field<T> rightField) {
         return multiply(Property.forName(leftFunction), rightField);
     }
 
@@ -251,8 +251,8 @@ public abstract class Fields {
         };
     }
 
-    public static <E, T extends Number> Field<T> multiplyValue(SerializedFunction<E, T> field,
-            T value) {
+    public static <E, T extends Number> Field<T> multiplyValue(SerializableFunction<E, T> field,
+                                                               T value) {
         return multiplyValue(Property.forName(field), value);
     }
 
@@ -271,13 +271,13 @@ public abstract class Fields {
     }
 
     public static <E, T extends Number> Field<Number> divide(
-            SerializedFunction<E, T> leftExpression, SerializedFunction<E, T> rightField) {
+            SerializableFunction<E, T> leftExpression, SerializableFunction<E, T> rightField) {
         return divide(Property.forName(leftExpression), Property.forName(rightField));
     }
 
 
-    public static <E, T extends Number> Field<Number> divide(SerializedFunction<E, T> leftFunction,
-            Field<T> rightField) {
+    public static <E, T extends Number> Field<Number> divide(SerializableFunction<E, T> leftFunction,
+                                                             Field<T> rightField) {
         return divide(Property.forName(leftFunction), rightField);
     }
 
@@ -296,8 +296,8 @@ public abstract class Fields {
         };
     }
 
-    public static <E, T extends Number> Field<Number> divideValue(SerializedFunction<E, T> field,
-            T value) {
+    public static <E, T extends Number> Field<Number> divideValue(SerializableFunction<E, T> field,
+                                                                  T value) {
         return divideValue(Property.forName(field), value);
     }
 
@@ -316,7 +316,7 @@ public abstract class Fields {
     }
 
     public static <E, T extends Number> Field<Number> divide(T value,
-            SerializedFunction<E, T> field) {
+            SerializableFunction<E, T> field) {
         return divide(value, Property.forName(field));
     }
 
@@ -376,7 +376,7 @@ public abstract class Fields {
         };
     }
 
-    public static <X, T extends Number> Field<T> neg(SerializedFunction<X, T> function) {
+    public static <X, T extends Number> Field<T> neg(SerializableFunction<X, T> function) {
         return neg(Property.forName(function));
     }
 
@@ -394,7 +394,7 @@ public abstract class Fields {
         };
     }
 
-    public static <X, T extends Number> Field<Double> sqrt(SerializedFunction<X, T> function) {
+    public static <X, T extends Number> Field<Double> sqrt(SerializableFunction<X, T> function) {
         return sqrt(Property.forName(function));
     }
 
@@ -412,7 +412,7 @@ public abstract class Fields {
         };
     }
 
-    public static <X, T extends Number> Field<T> abs(SerializedFunction<X, T> function) {
+    public static <X, T extends Number> Field<T> abs(SerializableFunction<X, T> function) {
         return abs(Property.forName(function));
     }
 
@@ -430,8 +430,103 @@ public abstract class Fields {
         };
     }
 
-    public static <X, T extends Comparable<T>> Field<T> max(SerializedFunction<X, T> function) {
+    public static <X> Field<Integer> year(SerializableFunction<X, ?> function) {
+        return year(Property.forName(function));
+    }
+
+    public static Field<Integer> year(String attributeName) {
+        return year(Property.forName(null, attributeName));
+    }
+
+    public static Field<Integer> year(String alias, String attributeName) {
+        return year(Property.forName(alias, attributeName));
+    }
+
+    /**
+     * The year of a date or a timestamp, which every database spells its own way and Hibernate
+     * renders accordingly.
+     */
+    public static Field<Integer> year(Field<?> field) {
+        return new Field<Integer>() {
+
+            public Expression<Integer> toExpression(Model<?> model, CriteriaBuilder builder) {
+                return JpaProviders.getProvider().extract(builder, field.toExpression(model, builder),
+                        JpaProvider.DatePart.YEAR);
+            }
+
+            public String toString() {
+                return String.format("year(%s)", field.toString());
+            }
+        };
+    }
+
+    public static <X> Field<Integer> month(SerializableFunction<X, ?> function) {
+        return month(Property.forName(function));
+    }
+
+    public static Field<Integer> month(String attributeName) {
+        return month(Property.forName(null, attributeName));
+    }
+
+    public static Field<Integer> month(String alias, String attributeName) {
+        return month(Property.forName(alias, attributeName));
+    }
+
+    /**
+     * The month of a date or a timestamp, which every database spells its own way and Hibernate
+     * renders accordingly.
+     */
+    public static Field<Integer> month(Field<?> field) {
+        return new Field<Integer>() {
+
+            public Expression<Integer> toExpression(Model<?> model, CriteriaBuilder builder) {
+                return JpaProviders.getProvider().extract(builder, field.toExpression(model, builder),
+                        JpaProvider.DatePart.MONTH);
+            }
+
+            public String toString() {
+                return String.format("month(%s)", field.toString());
+            }
+        };
+    }
+
+    public static <X> Field<Integer> day(SerializableFunction<X, ?> function) {
+        return day(Property.forName(function));
+    }
+
+    public static Field<Integer> day(String attributeName) {
+        return day(Property.forName(null, attributeName));
+    }
+
+    public static Field<Integer> day(String alias, String attributeName) {
+        return day(Property.forName(alias, attributeName));
+    }
+
+    /**
+     * The day of a date or a timestamp, which every database spells its own way and Hibernate
+     * renders accordingly.
+     */
+    public static Field<Integer> day(Field<?> field) {
+        return new Field<Integer>() {
+
+            public Expression<Integer> toExpression(Model<?> model, CriteriaBuilder builder) {
+                return JpaProviders.getProvider().extract(builder, field.toExpression(model, builder),
+                        JpaProvider.DatePart.DAY);
+            }
+
+            public String toString() {
+                return String.format("day(%s)", field.toString());
+            }
+        };
+    }
+
+    public static <X, T extends Comparable<T>> Field<T> max(SerializableFunction<X, T> function) {
         return max(Property.forName(function));
+    }
+
+    public static <T extends Comparable<T>> Field<T> max(String alias, String attributeName,
+            Class<T> requiredType) {
+        return max(Property.forName(alias, attributeName, requiredType));
     }
 
     public static <T extends Comparable<T>> Field<T> max(String attributeName,
@@ -453,8 +548,13 @@ public abstract class Fields {
         };
     }
 
-    public static <X, T extends Comparable<T>> Field<T> min(SerializedFunction<X, T> function) {
+    public static <X, T extends Comparable<T>> Field<T> min(SerializableFunction<X, T> function) {
         return min(Property.forName(function));
+    }
+
+    public static <T extends Comparable<T>> Field<T> min(String alias, String attributeName,
+            Class<T> requiredType) {
+        return min(Property.forName(alias, attributeName, requiredType));
     }
 
     public static <T extends Comparable<T>> Field<T> min(String attributeName,
@@ -476,8 +576,13 @@ public abstract class Fields {
         };
     }
 
-    public static <X, T extends Number> Field<T> sum(SerializedFunction<X, T> function) {
+    public static <X, T extends Number> Field<T> sum(SerializableFunction<X, T> function) {
         return sum(Property.forName(function));
+    }
+
+    public static <T extends Number> Field<T> sum(String alias, String attributeName,
+            Class<T> requiredType) {
+        return sum(Property.forName(alias, attributeName, requiredType));
     }
 
     public static <T extends Number> Field<T> sum(String attributeName, Class<T> requiredType) {
@@ -498,8 +603,13 @@ public abstract class Fields {
         };
     }
 
-    public static <X, T extends Number> Field<Double> avg(SerializedFunction<X, T> function) {
+    public static <X, T extends Number> Field<Double> avg(SerializableFunction<X, T> function) {
         return avg(Property.forName(function));
+    }
+
+    public static <T extends Number> Field<Double> avg(String alias, String attributeName,
+            Class<T> requiredType) {
+        return avg(Property.forName(alias, attributeName, requiredType));
     }
 
     public static <T extends Number> Field<Double> avg(String attributeName,
@@ -533,7 +643,7 @@ public abstract class Fields {
         return count(Property.forName(alias, attributeName));
     }
 
-    public static <X> Field<Long> count(SerializedFunction<X, ?> function) {
+    public static <X> Field<Long> count(SerializableFunction<X, ?> function) {
         return count(Property.forName(function));
     }
 
@@ -572,7 +682,7 @@ public abstract class Fields {
         return countDistinct(Property.forName(alias, attributeName));
     }
 
-    public static <X> Field<Long> countDistinct(SerializedFunction<X, ?> function) {
+    public static <X> Field<Long> countDistinct(SerializableFunction<X, ?> function) {
         return countDistinct(Property.forName(function));
     }
 
@@ -657,7 +767,7 @@ public abstract class Fields {
         };
     }
 
-    public static <X, T> Field<T> coalesce(SerializedFunction<X, T> function, T value) {
+    public static <X, T> Field<T> coalesce(SerializableFunction<X, T> function, T value) {
         return coalesce(Property.forName(function), value);
     }
 
@@ -675,7 +785,7 @@ public abstract class Fields {
         };
     }
 
-    public static <X, T> Field<T> nullif(SerializedFunction<X, T> function, T value) {
+    public static <X, T> Field<T> nullif(SerializableFunction<X, T> function, T value) {
         return nullif(Property.forName(function), value);
     }
 
@@ -794,7 +904,7 @@ public abstract class Fields {
 
     }
 
-    public static <X> Field<String> concat(String value, SerializedFunction<X, String> function) {
+    public static <X> Field<String> concat(String value, SerializableFunction<X, String> function) {
         return concat(value, Property.forName(function));
     }
 
@@ -813,7 +923,7 @@ public abstract class Fields {
 
     }
 
-    public static <X> Field<String> concat(SerializedFunction<X, String> function, String value) {
+    public static <X> Field<String> concat(SerializableFunction<X, String> function, String value) {
         return concat(Property.forName(function), value);
     }
 
@@ -832,7 +942,7 @@ public abstract class Fields {
 
     }
 
-    public static <X> Field<Integer> length(SerializedFunction<X, String> function) {
+    public static <X> Field<Integer> length(SerializableFunction<X, String> function) {
         return length(Property.forName(function));
     }
 
@@ -851,7 +961,7 @@ public abstract class Fields {
 
     }
 
-    public static <X, T extends Number> Field<T> ceil(SerializedFunction<X, T> function) {
+    public static <X, T extends Number> Field<T> ceil(SerializableFunction<X, T> function) {
         return ceil(Property.forName(function));
     }
 
@@ -870,7 +980,7 @@ public abstract class Fields {
 
     }
 
-    public static <X, T extends Number> Field<Integer> sign(SerializedFunction<X, T> function) {
+    public static <X, T extends Number> Field<Integer> sign(SerializableFunction<X, T> function) {
         return sign(Property.forName(function));
     }
 
@@ -889,7 +999,7 @@ public abstract class Fields {
 
     }
 
-    public static <X, T extends Number> Field<T> floor(SerializedFunction<X, T> function) {
+    public static <X, T extends Number> Field<T> floor(SerializableFunction<X, T> function) {
         return floor(Property.forName(function));
     }
 
@@ -908,8 +1018,8 @@ public abstract class Fields {
 
     }
 
-    public static <X, T extends Number> Field<T> round(SerializedFunction<X, T> function,
-            Integer scale) {
+    public static <X, T extends Number> Field<T> round(SerializableFunction<X, T> function,
+                                                       Integer scale) {
         return round(Property.forName(function), scale);
     }
 
@@ -944,8 +1054,8 @@ public abstract class Fields {
 
     }
 
-    public static <X> Field<String> substring(SerializedFunction<X, String> function, int from,
-            int to) {
+    public static <X> Field<String> substring(SerializableFunction<X, String> function, int from,
+                                              int to) {
         return substring(Property.forName(function), from, to);
     }
 
@@ -964,7 +1074,7 @@ public abstract class Fields {
 
     }
 
-    public static <X> Field<String> substring(SerializedFunction<X, String> function, int from) {
+    public static <X> Field<String> substring(SerializableFunction<X, String> function, int from) {
         return substring(Property.forName(function), from);
     }
 
@@ -983,7 +1093,7 @@ public abstract class Fields {
 
     }
 
-    public static <X> Field<String> lower(SerializedFunction<X, String> function) {
+    public static <X> Field<String> lower(SerializableFunction<X, String> function) {
         return lower(Property.forName(function));
     }
 
@@ -1002,7 +1112,7 @@ public abstract class Fields {
 
     }
 
-    public static <X> Field<String> upper(SerializedFunction<X, String> function) {
+    public static <X> Field<String> upper(SerializableFunction<X, String> function) {
         return upper(Property.forName(function));
     }
 
@@ -1020,7 +1130,7 @@ public abstract class Fields {
         };
     }
 
-    public static <X, T> Field<Boolean> eq(SerializedFunction<X, T> function, T value) {
+    public static <X, T> Field<Boolean> eq(SerializableFunction<X, T> function, T value) {
         return eq(Property.forName(function), value);
     }
 
@@ -1040,7 +1150,7 @@ public abstract class Fields {
         };
     }
 
-    public static <X, T> Field<Boolean> ne(SerializedFunction<X, T> function, T value) {
+    public static <X, T> Field<Boolean> ne(SerializableFunction<X, T> function, T value) {
         return ne(Property.forName(function), value);
     }
 
@@ -1060,8 +1170,8 @@ public abstract class Fields {
         };
     }
 
-    public static <X, T extends Comparable<T>> Field<Boolean> lt(SerializedFunction<X, T> function,
-            T value) {
+    public static <X, T extends Comparable<T>> Field<Boolean> lt(SerializableFunction<X, T> function,
+                                                                 T value) {
         return lt(Property.forName(function), value);
     }
 
@@ -1081,8 +1191,8 @@ public abstract class Fields {
         };
     }
 
-    public static <X, T extends Comparable<T>> Field<Boolean> lte(SerializedFunction<X, T> function,
-            T value) {
+    public static <X, T extends Comparable<T>> Field<Boolean> lte(SerializableFunction<X, T> function,
+                                                                  T value) {
         return lte(Property.forName(function), value);
     }
 
@@ -1102,8 +1212,8 @@ public abstract class Fields {
         };
     }
 
-    public static <X, T extends Comparable<T>> Field<Boolean> gt(SerializedFunction<X, T> function,
-            T value) {
+    public static <X, T extends Comparable<T>> Field<Boolean> gt(SerializableFunction<X, T> function,
+                                                                 T value) {
         return gt(Property.forName(function), value);
     }
 
@@ -1123,8 +1233,8 @@ public abstract class Fields {
         };
     }
 
-    public static <X, T extends Comparable<T>> Field<Boolean> gte(SerializedFunction<X, T> function,
-            T value) {
+    public static <X, T extends Comparable<T>> Field<Boolean> gte(SerializableFunction<X, T> function,
+                                                                  T value) {
         return gte(Property.forName(function), value);
     }
 

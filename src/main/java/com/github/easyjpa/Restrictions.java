@@ -25,8 +25,8 @@ public abstract class Restrictions {
         return type ? new TrueFilter() : new FalseFilter();
     }
 
-    public static <X, T extends Comparable<T>> LogicalFilter lt(SerializedFunction<X, T> function,
-            T value) {
+    public static <X, T extends Comparable<T>> LogicalFilter lt(SerializableFunction<X, T> function,
+                                                                T value) {
         return lt(Property.forName(function), value);
     }
 
@@ -46,8 +46,8 @@ public abstract class Restrictions {
         return lt(Property.forName(alias, attributeName), subQuery);
     }
 
-    public static <X, T extends Comparable<T>> LogicalFilter lt(SerializedFunction<X, T> function,
-            SubQueryBuilder<T> subQuery) {
+    public static <X, T extends Comparable<T>> LogicalFilter lt(SerializableFunction<X, T> function,
+                                                                SubQueryBuilder<T> subQuery) {
         return lt(Property.forName(function), subQuery);
     }
 
@@ -64,8 +64,8 @@ public abstract class Restrictions {
         });
     }
 
-    public static <X, T extends Comparable<T>> LogicalFilter gt(SerializedFunction<X, T> function,
-            T value) {
+    public static <X, T extends Comparable<T>> LogicalFilter gt(SerializableFunction<X, T> function,
+                                                                T value) {
         return gt(Property.forName(function), value);
     }
 
@@ -89,8 +89,8 @@ public abstract class Restrictions {
         return gt(Property.forName(alias, attributeName), subQuery);
     }
 
-    public static <X, T extends Comparable<T>> LogicalFilter gt(SerializedFunction<X, T> function,
-            SubQueryBuilder<T> subQuery) {
+    public static <X, T extends Comparable<T>> LogicalFilter gt(SerializableFunction<X, T> function,
+                                                                SubQueryBuilder<T> subQuery) {
         return gt(Property.forName(function), subQuery);
     }
 
@@ -112,8 +112,8 @@ public abstract class Restrictions {
         return lte(Property.forName(alias, attributeName), value);
     }
 
-    public static <X, T extends Comparable<T>> LogicalFilter lte(SerializedFunction<X, T> function,
-            T value) {
+    public static <X, T extends Comparable<T>> LogicalFilter lte(SerializableFunction<X, T> function,
+                                                                 T value) {
         return lte(Property.forName(function), value);
     }
 
@@ -128,8 +128,8 @@ public abstract class Restrictions {
         return lte(Property.forName(alias, attributeName), subQuery);
     }
 
-    public static <X, T extends Comparable<T>> LogicalFilter lte(SerializedFunction<X, T> function,
-            SubQueryBuilder<T> subQuery) {
+    public static <X, T extends Comparable<T>> LogicalFilter lte(SerializableFunction<X, T> function,
+                                                                 SubQueryBuilder<T> subQuery) {
         return lte(Property.forName(function), subQuery);
     }
 
@@ -156,8 +156,8 @@ public abstract class Restrictions {
         return gte(Property.forName(alias, attributeName), value);
     }
 
-    public static <X, T extends Comparable<T>> LogicalFilter gte(SerializedFunction<X, T> function,
-            T value) {
+    public static <X, T extends Comparable<T>> LogicalFilter gte(SerializableFunction<X, T> function,
+                                                                 T value) {
         return gte(Property.forName(function), value);
     }
 
@@ -172,8 +172,8 @@ public abstract class Restrictions {
         return gte(Property.forName(alias, attributeName), subQuery);
     }
 
-    public static <X, T extends Comparable<T>> LogicalFilter gte(SerializedFunction<X, T> function,
-            SubQueryBuilder<T> subQuery) {
+    public static <X, T extends Comparable<T>> LogicalFilter gte(SerializableFunction<X, T> function,
+                                                                 SubQueryBuilder<T> subQuery) {
         return gte(Property.forName(function), subQuery);
     }
 
@@ -191,11 +191,15 @@ public abstract class Restrictions {
         });
     }
 
+    public static LogicalFilter ne(String attributeName, Object value) {
+        return ne(null, attributeName, value);
+    }
+
     public static LogicalFilter ne(String alias, String attributeName, Object value) {
         return ne(Property.forName(alias, attributeName), value);
     }
 
-    public static <X> LogicalFilter ne(SerializedFunction<X, ?> function, Object value) {
+    public static <X> LogicalFilter ne(SerializableFunction<X, ?> function, Object value) {
         return ne(Property.forName(function), value);
     }
 
@@ -204,8 +208,8 @@ public abstract class Restrictions {
         return ne(Property.forName(alias, attributeName), subQuery);
     }
 
-    public static <X, T> LogicalFilter ne(SerializedFunction<X, T> function,
-            SubQueryBuilder<T> subQuery) {
+    public static <X, T> LogicalFilter ne(SerializableFunction<X, T> function,
+                                          SubQueryBuilder<T> subQuery) {
         return ne(Property.forName(function), subQuery);
     }
 
@@ -227,8 +231,8 @@ public abstract class Restrictions {
                 Property.forName(rightAlias, rightAttributeName));
     }
 
-    public static <X, Y> LogicalFilter ne(SerializedFunction<X, ?> leftSf,
-            SerializedFunction<Y, ?> rightSf) {
+    public static <X, Y> LogicalFilter ne(SerializableFunction<X, ?> leftSf,
+                                          SerializableFunction<Y, ?> rightSf) {
         return ne(Property.forName(leftSf), Property.forName(rightSf));
     }
 
@@ -238,11 +242,15 @@ public abstract class Restrictions {
         });
     }
 
+    public static LogicalFilter eq(String attributeName, Object value) {
+        return eq(null, attributeName, value);
+    }
+
     public static LogicalFilter eq(String alias, String attributeName, Object value) {
         return eq(Property.forName(alias, attributeName), value);
     }
 
-    public static <X> LogicalFilter eq(SerializedFunction<X, ?> function, Object value) {
+    public static <X> LogicalFilter eq(SerializableFunction<X, ?> function, Object value) {
         return eq(Property.forName(function), value);
     }
 
@@ -264,8 +272,8 @@ public abstract class Restrictions {
                 Property.forName(rightAlias, rightAttributeName));
     }
 
-    public static <X, Y> LogicalFilter eq(SerializedFunction<X, ?> leftSf,
-            SerializedFunction<Y, ?> rightSf) {
+    public static <X, Y> LogicalFilter eq(SerializableFunction<X, ?> leftSf,
+                                          SerializableFunction<Y, ?> rightSf) {
         return eq(Property.forName(leftSf), Property.forName(rightSf));
     }
 
@@ -274,8 +282,8 @@ public abstract class Restrictions {
         return eq(Property.forName(alias, attributeName), subQuery);
     }
 
-    public static <X, T> LogicalFilter eq(SerializedFunction<X, T> function,
-            SubQueryBuilder<T> subQuery) {
+    public static <X, T> LogicalFilter eq(SerializableFunction<X, T> function,
+                                          SubQueryBuilder<T> subQuery) {
         return eq(Property.forName(function), subQuery);
     }
 
@@ -294,8 +302,8 @@ public abstract class Restrictions {
         return like(null, attributeName, pattern, escapeChar);
     }
 
-    public static <X> LogicalFilter like(SerializedFunction<X, String> function, String pattern,
-            char escapeChar) {
+    public static <X> LogicalFilter like(SerializableFunction<X, String> function, String pattern,
+                                         char escapeChar) {
         return like(Property.forName(function), pattern, escapeChar);
     }
 
@@ -314,22 +322,26 @@ public abstract class Restrictions {
         return notLike(null, attributeName, pattern, escapeChar);
     }
 
-    public static <X> LogicalFilter notLike(SerializedFunction<X, String> function, String pattern,
-            char escapeChar) {
+    public static <X> LogicalFilter notLike(SerializableFunction<X, String> function, String pattern,
+                                            char escapeChar) {
         return notLike(Property.forName(function), pattern, escapeChar);
     }
 
     public static LogicalFilter notLike(Field<String> field, String pattern, char escapeChar) {
         return create(field, (model, expression, builder) -> {
-            return builder.notLike(expression, pattern, escapeChar);
+            return builder.notLike(expression, "%" + pattern + "%", escapeChar);
         });
+    }
+
+    public static LogicalFilter like(String attributeName, String pattern) {
+        return like(null, attributeName, pattern);
     }
 
     public static LogicalFilter like(String alias, String attributeName, String pattern) {
         return like(Property.forName(alias, attributeName), pattern);
     }
 
-    public static <X> LogicalFilter like(SerializedFunction<X, String> function, String pattern) {
+    public static <X> LogicalFilter like(SerializableFunction<X, String> function, String pattern) {
         return like(Property.forName(function), pattern);
     }
 
@@ -339,18 +351,22 @@ public abstract class Restrictions {
         });
     }
 
+    public static LogicalFilter notLike(String attributeName, String pattern) {
+        return notLike(null, attributeName, pattern);
+    }
+
     public static LogicalFilter notLike(String alias, String attributeName, String pattern) {
         return notLike(Property.forName(alias, attributeName), pattern);
     }
 
-    public static <X> LogicalFilter notLike(SerializedFunction<X, String> function,
-            String pattern) {
+    public static <X> LogicalFilter notLike(SerializableFunction<X, String> function,
+                                            String pattern) {
         return notLike(Property.forName(function), pattern);
     }
 
     public static LogicalFilter notLike(Field<String> field, String pattern) {
         return create(field, (model, expression, builder) -> {
-            return builder.notLike(expression, pattern);
+            return builder.notLike(expression, "%" + pattern + "%");
         });
     }
 
@@ -359,8 +375,8 @@ public abstract class Restrictions {
         return in(Property.forName(alias, attributeName), subQuery);
     }
 
-    public static <X, T> LogicalFilter in(SerializedFunction<X, T> function,
-            SubQueryBuilder<T> subQuery) {
+    public static <X, T> LogicalFilter in(SerializableFunction<X, T> function,
+                                          SubQueryBuilder<T> subQuery) {
         return in(Property.forName(function), subQuery);
     }
 
@@ -371,11 +387,15 @@ public abstract class Restrictions {
         });
     }
 
+    public static <T> LogicalFilter in(String attributeName, Iterable<T> values) {
+        return in(null, attributeName, values);
+    }
+
     public static <T> LogicalFilter in(String alias, String attributeName, Iterable<T> values) {
         return in(Property.forName(alias, attributeName), values);
     }
 
-    public static <X, T> LogicalFilter in(SerializedFunction<X, T> function, Iterable<T> values) {
+    public static <X, T> LogicalFilter in(SerializableFunction<X, T> function, Iterable<T> values) {
         return in(Property.forName(function), values);
     }
 
@@ -395,7 +415,7 @@ public abstract class Restrictions {
     }
 
     public static <X, T extends Comparable<T>> LogicalFilter between(
-            SerializedFunction<X, T> function, T startValue, T endValue) {
+            SerializableFunction<X, T> function, T startValue, T endValue) {
         return between(Property.forName(function), startValue, endValue);
     }
 
@@ -432,7 +452,7 @@ public abstract class Restrictions {
         return notNull(null, attributeName);
     }
 
-    public static <X> LogicalFilter notNull(SerializedFunction<X, ?> function) {
+    public static <X> LogicalFilter notNull(SerializableFunction<X, ?> function) {
         return notNull(Property.forName(function));
     }
 
@@ -450,7 +470,7 @@ public abstract class Restrictions {
         return isNull(null, attributeName);
     }
 
-    public static <X> LogicalFilter isNull(SerializedFunction<X, ?> function) {
+    public static <X> LogicalFilter isNull(SerializableFunction<X, ?> function) {
         return isNull(Property.forName(function));
     }
 
@@ -517,7 +537,7 @@ public abstract class Restrictions {
     private static class FalseFilter extends LogicalFilter {
 
         public Predicate toPredicate(Model<?> model, CriteriaBuilder builder) {
-            return builder.isFalse(builder.literal(Boolean.FALSE));
+            return builder.isTrue(builder.literal(Boolean.FALSE));
         }
 
     }

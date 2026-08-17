@@ -3,6 +3,8 @@ package com.github.easyjpa;
 
 /**
  * 
+ * Execute the CriteriaUpdate or CriteriaDelete built by a callback.
+ * 
  * @Description: JpaCustomUpdate
  * @Author: Fred Feng
  * @Date: 18/10/2024

@@ -5,6 +5,8 @@ import jakarta.persistence.Query;
 
 /**
  * 
+ * Extract the data from a native query.
+ * 
  * @Description: ResultSetExtractor
  * @Author: Fred Feng
  * @Date: 18/08/2021

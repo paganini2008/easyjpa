@@ -44,6 +44,9 @@ public class User {
     @Column(name = "email", nullable = true, length = 255)
     private String email;
 
+    @Column(name = "vip", nullable = false)
+    private Boolean vip;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.REFRESH, orphanRemoval = true)
     private List<Order> orders;
 
@@ -51,10 +54,11 @@ public class User {
         this.id = id;
     }
 
-    public User(String username, String password, String email) {
+    public User(String username, String password, String email, Boolean vip) {
         this.username = username;
         this.password = password;
         this.email = email;
+        this.vip = vip;
     }
 
 }

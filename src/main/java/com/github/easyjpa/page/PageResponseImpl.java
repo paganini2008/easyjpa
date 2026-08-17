@@ -9,6 +9,8 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
 /**
+ * Default PageResponse implementation.
+ * 
  * @Description: PageResponseImpl in Generic paging tools
  * @Author: Fred Feng
  * @Date: 08/03/2023
@@ -142,7 +144,10 @@ public class PageResponseImpl<T> implements PageResponse<T>, Serializable {
 
     @Override
     public Page<T> toPage() throws Exception {
-        return new PageImpl<T>(getContent(), pageable, totalRecords);
+        // The page number here is one based whereas the one of Spring Data is zero based
+        return new PageImpl<T>(getContent(),
+                org.springframework.data.domain.PageRequest.of(getPageNumber() - 1, getPageSize()),
+                totalRecords);
     }
 
     @Override

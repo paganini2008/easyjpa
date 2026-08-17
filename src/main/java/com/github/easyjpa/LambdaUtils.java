@@ -23,7 +23,7 @@ public abstract class LambdaUtils {
     private static final Map<String, Class<?>> attributeTypeCache =
             new ConcurrentHashMap<String, Class<?>>();
 
-    public static <E, T> LambdaInfo inspect(SerializedFunction<E, T> function) {
+    public static <E, T> LambdaInfo inspect(SerializableFunction<E, T> function) {
         SerializedLambda object;
         try {
             Method method = function.getClass().getDeclaredMethod("writeReplace");

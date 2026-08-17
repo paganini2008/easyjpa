@@ -3,6 +3,8 @@ package com.github.easyjpa;
 
 /**
  * 
+ * Thrown when an attribute name matches no path of the entity.
+ * 
  * @Description: PathMismatchedException
  * @Author: Fred Feng
  * @Date: 24/03/2025

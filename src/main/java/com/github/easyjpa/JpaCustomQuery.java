@@ -5,6 +5,8 @@ import java.util.List;
 
 /**
  * 
+ * Execute the CriteriaQuery built by a callback.
+ * 
  * @Description: JpaCustomQuery
  * @Author: Fred Feng
  * @Date: 18/10/2024

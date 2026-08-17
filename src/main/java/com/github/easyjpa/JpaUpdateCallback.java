@@ -5,6 +5,8 @@ import jakarta.persistence.criteria.CriteriaUpdate;
 
 /**
  * 
+ * Callback which builds a CriteriaUpdate.
+ * 
  * @Description: JpaUpdateCallback
  * @Author: Fred Feng
  * @Date: 07/10/2024

@@ -6,6 +6,8 @@ import com.github.easyjpa.page.PageableQuery;
 
 /**
  * 
+ * Result set of a pagination.
+ * 
  * @Description: JpaPageResultSet
  * @Author: Fred Feng
  * @Date: 18/10/2024

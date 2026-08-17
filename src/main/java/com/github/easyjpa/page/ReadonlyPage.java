@@ -3,6 +3,8 @@ package com.github.easyjpa.page;
 import java.util.List;
 
 /**
+ * Adapt a PageResponse to the Spring Data Page.
+ * 
  * @Description: ReadonlyPage
  * @Author: Fred Feng
  * @Date: 08/03/2023

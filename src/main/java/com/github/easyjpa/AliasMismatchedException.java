@@ -3,6 +3,8 @@ package com.github.easyjpa;
 
 /**
  * 
+ * Thrown when a table alias is referred to but has never been registered by a join.
+ * 
  * @Description: AliasMismatchedException
  * @Author: Fred Feng
  * @Date: 18/10/2024

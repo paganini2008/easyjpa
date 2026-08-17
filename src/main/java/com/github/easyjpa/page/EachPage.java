@@ -3,6 +3,8 @@ package com.github.easyjpa.page;
 import java.util.List;
 
 /**
+ * One page of a paginated result.
+ * 
  * @Description: EachPage
  * @Author: Fred Feng
  * @Date: 08/03/2023

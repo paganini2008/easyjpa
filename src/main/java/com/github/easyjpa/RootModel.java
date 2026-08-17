@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import jakarta.persistence.criteria.From;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Path;
@@ -29,7 +30,7 @@ public class RootModel<X> implements Model<X> {
     private final String alias;
     private final Metamodel metamodel;
 
-    RootModel(Root<X> root, String alias, Metamodel metamodel) {
+    public RootModel(Root<X> root, String alias, Metamodel metamodel) {
         this.root = root;
         this.alias = alias;
         this.metamodel = metamodel;
@@ -142,6 +143,21 @@ public class RootModel<X> implements Model<X> {
     @Override
     public Root<X> getRoot() {
         return root;
+    }
+
+    @Override
+    public From<?, ?> getFrom() {
+        return root;
+    }
+
+    @Override
+    public String aliasOf(String className) {
+        return getType().getName().equals(className) ? alias : null;
+    }
+
+    @Override
+    public From<?, ?> getFrom(String alias) {
+        return this.alias.equals(alias) ? root : null;
     }
 
     @Override

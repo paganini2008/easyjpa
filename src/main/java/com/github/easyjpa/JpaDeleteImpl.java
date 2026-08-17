@@ -8,6 +8,8 @@ import jakarta.persistence.criteria.Subquery;
 
 /**
  * 
+ * Default JpaDelete implementation.
+ * 
  * @Description: JpaDeleteImpl
  * @Author: Fred Feng
  * @Date: 18/10/2024
@@ -38,16 +40,40 @@ public class JpaDeleteImpl<E> implements JpaDelete<E> {
 
     @Override
     public <X> JpaSubQuery<X, X> subQuery(Class<X> entityClass) {
+        return subQuery(entityClass, defaultAlias(entityClass));
+    }
+
+    @Override
+    public <X> JpaSubQuery<X, X> subQuery(Class<X> entityClass, String alias) {
         Subquery<X> subquery = delete.subquery(entityClass);
         Root<X> root = subquery.from(entityClass);
-        return new JpaSubQueryImpl<X, X>(Model.forRoot(root), subquery, builder);
+        return new JpaSubQueryImpl<X, X>(sibling(root, alias), subquery, builder);
     }
 
     @Override
     public <X, Y> JpaSubQuery<X, Y> subQuery(Class<X> entityClass, Class<Y> resultClass) {
+        return subQuery(entityClass, defaultAlias(entityClass), resultClass);
+    }
+
+    @Override
+    public <X, Y> JpaSubQuery<X, Y> subQuery(Class<X> entityClass, String alias,
+            Class<Y> resultClass) {
         Subquery<Y> subquery = delete.subquery(resultClass);
         Root<X> root = subquery.from(entityClass);
-        return new JpaSubQueryImpl<X, Y>(Model.forRoot(root), subquery, builder);
+        return new JpaSubQueryImpl<X, Y>(sibling(root, alias), subquery, builder);
+    }
+
+    /**
+     * The subquery keeps the model of this statement behind its own, so that the attributes of the
+     * entity being deleted stay reachable, which is how the two get correlated.
+     */
+    private <X> Model<X> sibling(Root<X> root, String alias) {
+        return model.sibling(new RootModel<X>(root, alias, model.getMetamodel()));
+    }
+
+    /** An alias of its own, since the one of this statement is already taken. */
+    private String defaultAlias(Class<?> entityClass) {
+        return entityClass.getSimpleName().toLowerCase();
     }
 
     @Override

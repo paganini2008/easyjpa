@@ -5,6 +5,8 @@ import jakarta.persistence.criteria.CriteriaQuery;
 
 /**
  * 
+ * The group by clause of a pagination.
+ * 
  * @Description: JpaPageGroupBy
  * @Author: Fred Feng
  * @Date: 18/10/2024

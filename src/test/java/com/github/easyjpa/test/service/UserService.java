@@ -29,11 +29,11 @@ public class UserService {
      * Random save some users
      */
     public void saveRandomUsers() {
-        List.of(new User("Jack", "123456", "Jack001@jpatest.com"),
-                new User("Petter", "123456", "Petter002@jpatest.com"),
-                new User("Scott", "123456", "scott003@jpatest.com"),
-                new User("Lee", "123456", "lee004@jpatest.com"),
-                new User("Terry", "123456", "terry005@jpatest.com")).forEach(user -> {
+        List.of(new User("Jack", "123456", "Jack001@jpatest.com", true),
+                new User("Petter", "123456", "Petter002@jpatest.com", true),
+                new User("Scott", "123456", "scott003@jpatest.com", false),
+                new User("Lee", "123456", "lee004@jpatest.com", false),
+                new User("Terry", "123456", null, false)).forEach(user -> {
                     userDao.save(user);
                 });
         log.info("Total users: {}", userDao.count());

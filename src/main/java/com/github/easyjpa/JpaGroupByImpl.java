@@ -10,6 +10,8 @@ import jakarta.persistence.criteria.Selection;
 
 /**
  * 
+ * Default JpaGroupBy implementation.
+ * 
  * @Description: JpaGroupByImpl
  * @Author: Fred Feng
  * @Date: 18/10/2024

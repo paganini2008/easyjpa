@@ -5,9 +5,12 @@ import java.util.ArrayList;
 import java.util.List;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Selection;
 import jakarta.persistence.criteria.Subquery;
 
 /**
+ * 
+ * Default JpaSubQuery implementation.
  * 
  * @Description: JpaSubQueryImpl
  * @Author: Fred Feng
@@ -68,8 +71,24 @@ public class JpaSubQueryImpl<X, Y> implements JpaSubQuery<X, Y> {
     }
 
     @Override
+    public <Z> JpaSubQuery<Z, Y> join(String fromAlias, String attributeName, String alias,
+            Filter on) {
+        Model<Z> join = model.join(fromAlias, attributeName, alias,
+                on != null ? on.toPredicate(model, builder) : null);
+        return new JpaSubQueryImpl<Z, Y>(join, query, builder);
+    }
+
+    @Override
     public <Z> JpaSubQuery<Z, Y> leftJoin(String attributeName, String alias, Filter on) {
         Model<Z> join = model.leftJoin(attributeName, alias,
+                on != null ? on.toPredicate(model, builder) : null);
+        return new JpaSubQueryImpl<Z, Y>(join, query, builder);
+    }
+
+    @Override
+    public <Z> JpaSubQuery<Z, Y> leftJoin(String fromAlias, String attributeName, String alias,
+            Filter on) {
+        Model<Z> join = model.leftJoin(fromAlias, attributeName, alias,
                 on != null ? on.toPredicate(model, builder) : null);
         return new JpaSubQueryImpl<Z, Y>(join, query, builder);
     }
@@ -79,6 +98,26 @@ public class JpaSubQueryImpl<X, Y> implements JpaSubQuery<X, Y> {
         Model<Z> join = model.rightJoin(attributeName, alias,
                 on != null ? on.toPredicate(model, builder) : null);
         return new JpaSubQueryImpl<Z, Y>(join, query, builder);
+    }
+
+    @Override
+    public <Z> JpaSubQuery<Z, Y> rightJoin(String fromAlias, String attributeName, String alias,
+            Filter on) {
+        Model<Z> join = model.rightJoin(fromAlias, attributeName, alias,
+                on != null ? on.toPredicate(model, builder) : null);
+        return new JpaSubQueryImpl<Z, Y>(join, query, builder);
+    }
+
+    @Override
+    public JpaSubQuery<X, Y> select(ColumnList columnList) {
+        if (columnList != null) {
+            List<Selection<?>> selections = new ArrayList<Selection<?>>();
+            for (Column column : columnList) {
+                selections.add(column.toSelection(model, builder));
+            }
+            JpaProviders.getProvider().multiselect(query, selections);
+        }
+        return this;
     }
 
     @Override

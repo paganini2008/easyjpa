@@ -8,6 +8,8 @@ import org.springframework.beans.BeanUtils;
 
 /**
  * 
+ * Transform a query result into a bean by matching the selection aliases to the bean properties.
+ * 
  * @Description: BeanPropertyTransformer
  * @Author: Fred Feng
  * @Date: 18/10/2024

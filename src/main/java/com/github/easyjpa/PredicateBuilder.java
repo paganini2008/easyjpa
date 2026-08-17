@@ -6,6 +6,8 @@ import jakarta.persistence.criteria.Predicate;
 
 /**
  * 
+ * Build a Predicate from the expression of a Field.
+ * 
  * @Description: PredicateBuilder
  * @Author: Fred Feng
  * @Date: 07/10/2024

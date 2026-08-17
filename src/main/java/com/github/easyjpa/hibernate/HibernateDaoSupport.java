@@ -4,6 +4,7 @@ package com.github.easyjpa.hibernate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import org.hibernate.Session;
 import org.hibernate.query.NativeQuery;
 import org.hibernate.query.sql.internal.NativeQueryImpl;
@@ -11,7 +12,7 @@ import org.hibernate.transform.Transformers;
 import com.github.easyjpa.EntityDao;
 import com.github.easyjpa.EntityDaoSupport;
 import com.github.easyjpa.page.PageableQuery;
-import com.github.easyjpa.support.QueryResultSetExtractor;
+import com.github.easyjpa.support.BeanPropertyRowMapper;
 import com.github.easyjpa.support.RowMapper;
 import jakarta.persistence.EntityManager;
 
@@ -58,29 +59,26 @@ public class HibernateDaoSupport<E, ID> extends EntityDaoSupport<E, ID>
             List<Map<String, Object>> dataList = (List<Map<String, Object>>) query.getResultList();
             int index = 0;
             for (Map<String, Object> data : dataList) {
-                T mappedResult = rowMapper.mapRow(index++, data);
+                T mappedResult = rowMapper.mapRow(index++, caseInsensitive(data));
                 results.add(mappedResult);
             }
             return results;
         }
 
-    }
-
-    @SuppressWarnings("unchecked")
-    private static class BeanPropertyQueryResultSetExtractor<T>
-            implements QueryResultSetExtractor<T> {
-
-        private final Class<T> resultClass;
-
-        BeanPropertyQueryResultSetExtractor(Class<T> resultClass) {
-            this.resultClass = resultClass;
+        // The database decides how a column label is cased, so a RowMapper should not have to care.
+        private Map<String, Object> caseInsensitive(Map<String, Object> data) {
+            Map<String, Object> copy = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
+            copy.putAll(data);
+            return copy;
         }
 
-        @Override
-        public List<T> extractData(Session session, NativeQuery<?> query) {
-            query.unwrap(NativeQueryImpl.class)
-                    .setResultTransformer(Transformers.aliasToBean(resultClass));
-            return (List<T>) query.getResultList();
+    }
+
+    private static class BeanPropertyQueryResultSetExtractor<T>
+            extends MappedQueryResultSetExtractor<T> {
+
+        BeanPropertyQueryResultSetExtractor(Class<T> resultClass) {
+            super(new BeanPropertyRowMapper<T>(resultClass));
         }
 
     }

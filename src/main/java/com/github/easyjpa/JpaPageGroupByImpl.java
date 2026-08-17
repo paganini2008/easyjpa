@@ -4,6 +4,8 @@ package com.github.easyjpa;
 import jakarta.persistence.criteria.CriteriaQuery;
 
 /**
+ *
+ * Default JpaPageGroupBy implementation.
  * 
  * @Description: JpaPageGroupByImpl
  * @Author: Fred Feng
@@ -13,10 +15,10 @@ import jakarta.persistence.criteria.CriteriaQuery;
 public class JpaPageGroupByImpl<E, T> implements JpaPageGroupBy<E, T> {
 
     private final JpaGroupBy<E, T> query;
-    private final JpaGroupBy<E, Long> counter;
+    private final JpaPageCount<E> counter;
     private final JpaCustomQuery<?> customQuery;
 
-    JpaPageGroupByImpl(JpaGroupBy<E, T> query, JpaGroupBy<E, Long> counter,
+    JpaPageGroupByImpl(JpaGroupBy<E, T> query, JpaPageCount<E> counter,
             JpaCustomQuery<?> customQuery) {
         this.query = query;
         this.counter = counter;
@@ -34,8 +36,7 @@ public class JpaPageGroupByImpl<E, T> implements JpaPageGroupBy<E, T> {
     @Override
     public JpaPageResultSet<T> select(ColumnList columnList) {
         query.select(columnList);
-        return new JpaGroupPageResultSetImpl<T>(query.model(), query.query(), counter.query(),
-                customQuery);
+        return new JpaGroupPageResultSetImpl<T>(query.model(), query.query(), counter, customQuery);
     }
 
     @Override

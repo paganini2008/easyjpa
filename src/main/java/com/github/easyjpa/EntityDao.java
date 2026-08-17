@@ -13,6 +13,8 @@ import jakarta.persistence.Tuple;
 
 /**
  * 
+ * Dao interface which extends the Spring Data repository with the query, page, update and delete APIs.
+ * 
  * @Description: EntityDao
  * @Author: Fred Feng
  * @Date: 18/10/2024

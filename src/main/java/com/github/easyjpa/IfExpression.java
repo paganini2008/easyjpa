@@ -31,7 +31,7 @@ public class IfExpression<T, R> implements Field<R> {
         this(Property.forName(alias, attributeName));
     }
 
-    public <X> IfExpression(SerializedFunction<X, T> function) {
+    public <X> IfExpression(SerializableFunction<X, T> function) {
         this.field = Property.forName(function);
     }
 

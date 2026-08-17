@@ -2,7 +2,6 @@ package com.github.easyjpa;
 
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
-import org.hibernate.property.access.spi.PropertyAccessException;
 import org.springframework.aop.framework.AopProxyUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.core.convert.ConversionService;
@@ -10,6 +9,8 @@ import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.util.ReflectionUtils;
 
 /**
+ * 
+ * Read and write the bean properties reflectively.
  * 
  * @Description: PropertyUtils
  * @Author: Fred Feng
@@ -69,7 +70,6 @@ public abstract class PropertyUtils {
                 field.set(object, attributeValue);
             }
         } catch (Exception e) {
-            e.printStackTrace();
             throw new PropertyAccessException(e.getMessage(), e);
         }
     }

@@ -43,7 +43,7 @@ public class Product {
     @Column(name = "price", nullable = false, precision = 11, scale = 2)
     private BigDecimal price;
 
-    @Column(name = "discount", nullable = true)
+    @Column(name = "discount", nullable = true, precision = 5, scale = 2)
     private BigDecimal discount;
 
     @Column(name = "produce_date", nullable = false)

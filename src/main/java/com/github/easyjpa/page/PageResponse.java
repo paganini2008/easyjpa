@@ -6,6 +6,8 @@ import org.springframework.data.domain.Page;
 
 /**
  * 
+ * Paginated result, which navigates between the pages.
+ * 
  * @Description: PageResponse
  * @Author: Fred Feng
  * @Date: 08/03/2023

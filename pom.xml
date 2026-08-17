@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.github.paganini2008</groupId>
     <artifactId>easyjpa-spring-boot-starter</artifactId>
-    <version>1.0.0-RC1</version>
+    <version>1.0.0</version>
     <packaging>jar</packaging>
     <name>easyjpa</name>
     <url>https://github.com/paganini2008/easyjpa</url>
@@ -31,7 +31,8 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <springboot.version>3.4.3</springboot.version>
+        <springboot.version>3.5.16</springboot.version>
+        <eclipselink.version>4.0.4</eclipselink.version>
         <java.version>17</java.version>
     </properties>
     <dependencies>
@@ -48,6 +49,13 @@
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
+        <!-- Hibernate comes with the starter and is the default, EclipseLink is opt-in -->
+        <dependency>
+            <groupId>org.eclipse.persistence</groupId>
+            <artifactId>org.eclipse.persistence.jpa</artifactId>
+            <version>${eclipselink.version}</version>
+            <optional>true</optional>
+        </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
@@ -58,17 +66,22 @@
             <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Run the tests against a real database: mvn test -Dspring.profiles.active=postgresql -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-		    <groupId>org.junit.platform</groupId>
-		    <artifactId>junit-platform-console-standalone</artifactId>
-		    <version>1.10.0</version>
-		    <scope>test</scope>
-		</dependency>
     </dependencies>
     <build>
         <plugins>
@@ -91,6 +104,25 @@
                         <phase>compile</phase>
                         <goals>
                             <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.12</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -138,6 +170,31 @@
         </dependencies>
     </dependencyManagement>
     <profiles>
+        <!-- Run the tests against EclipseLink: mvn test -Peclipselink -->
+        <profile>
+            <id>eclipselink</id>
+            <properties>
+                <test.profiles>eclipselink</test.profiles>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <!-- Hibernate has to stay out of the way, otherwise it is picked up -->
+                            <classpathDependencyExcludes>
+                                <classpathDependencyExclude>org.hibernate.orm:hibernate-core</classpathDependencyExclude>
+                            </classpathDependencyExcludes>
+                            <systemPropertyVariables>
+                                <!-- Add a database here as well: -Dtest.profiles=eclipselink,postgresql -->
+                                <spring.profiles.active>${test.profiles}</spring.profiles.active>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         <profile>
             <id>release-4</id>
             <build>

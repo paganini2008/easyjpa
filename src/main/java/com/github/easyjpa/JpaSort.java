@@ -5,6 +5,8 @@ import jakarta.persistence.criteria.Order;
 
 /**
  * 
+ * Sort of an order by clause.
+ * 
  * @Description: JpaSort
  * @Author: Fred Feng
  * @Date: 18/10/2024
@@ -23,7 +25,7 @@ public interface JpaSort {
         return asc(Property.forName(alias, attributeName));
     }
 
-    static <X> JpaSort asc(SerializedFunction<X, ?> sf) {
+    static <X> JpaSort asc(SerializableFunction<X, ?> sf) {
         return asc(Property.forName(sf));
     }
 
@@ -48,7 +50,7 @@ public interface JpaSort {
         return desc(Property.forName(alias, attributeName));
     }
 
-    static <X> JpaSort desc(SerializedFunction<X, ?> sf) {
+    static <X> JpaSort desc(SerializableFunction<X, ?> sf) {
         return desc(Property.forName(sf));
     }
 

@@ -6,6 +6,8 @@ import com.github.easyjpa.page.PageableQuery;
 import jakarta.persistence.criteria.CriteriaQuery;
 
 /**
+ *
+ * Result set of a grouping pagination.
  * 
  * @Description: JpaGroupPageResultSetImpl
  * @Author: Fred Feng
@@ -16,10 +18,10 @@ public class JpaGroupPageResultSetImpl<T> implements JpaPageResultSet<T> {
 
     private final Model<?> model;
     private final CriteriaQuery<T> query;
-    private final CriteriaQuery<Long> counter;
+    private final JpaPageCount<?> counter;
     private final JpaCustomQuery<?> customQuery;
 
-    JpaGroupPageResultSetImpl(Model<?> model, CriteriaQuery<T> query, CriteriaQuery<Long> counter,
+    JpaGroupPageResultSetImpl(Model<?> model, CriteriaQuery<T> query, JpaPageCount<?> counter,
             JpaCustomQuery<?> customQuery) {
         this.model = model;
         this.query = query;
@@ -34,11 +36,7 @@ public class JpaGroupPageResultSetImpl<T> implements JpaPageResultSet<T> {
 
     @Override
     public long rowCount() {
-        List<Long> list = customQuery.getResultList(builder -> {
-            counter.select(builder.count(builder.toInteger(builder.literal(1))));
-            return counter;
-        });
-        return list != null ? list.size() : 0;
+        return counter.rowCount(customQuery);
     }
 
     @Override

@@ -5,6 +5,8 @@ import java.util.List;
 
 /**
  * 
+ * A list of Fields, mostly used by a group by clause.
+ * 
  * @Description: FieldList
  * @Author: Fred Feng
  * @Date: 07/10/2024
@@ -22,9 +24,9 @@ public class FieldList extends ArrayList<Field<?>> {
     }
 
     @SafeVarargs
-    public <X> FieldList(SerializedFunction<X, ?>... functions) {
+    public <X> FieldList(SerializableFunction<X, ?>... functions) {
         if (functions != null && functions.length > 0) {
-            for (SerializedFunction<X, ?> function : functions) {
+            for (SerializableFunction<X, ?> function : functions) {
                 add(Property.forName(function));
             }
         }
@@ -72,7 +74,7 @@ public class FieldList extends ArrayList<Field<?>> {
     }
 
     @SafeVarargs
-    public final <X> FieldList addFields(SerializedFunction<X, ?>... functions) {
+    public final <X> FieldList addFields(SerializableFunction<X, ?>... functions) {
         addAll(List.of(functions).stream().map(Property::forName).toList());
         return this;
     }

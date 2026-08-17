@@ -1,11 +1,13 @@
 
-package com.github.easyjpa.support;
+package com.github.easyjpa.hibernate;
 
 import java.util.List;
 import org.hibernate.Session;
 import org.hibernate.query.NativeQuery;
 
 /**
+ * 
+ * Extract a native query result with a RowMapper.
  * 
  * @Description: QueryResultSetExtractor
  * @Author: Fred Feng

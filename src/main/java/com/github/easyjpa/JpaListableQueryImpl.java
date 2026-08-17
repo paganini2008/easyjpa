@@ -8,6 +8,8 @@ import jakarta.persistence.criteria.Selection;
 
 /**
  * 
+ * Transformed result of a query.
+ * 
  * @Description: JpaListableQueryImpl
  * @Author: Fred Feng
  * @Date: 18/10/2024

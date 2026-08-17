@@ -6,6 +6,8 @@ import jakarta.persistence.criteria.CriteriaDelete;
 
 /**
  * 
+ * Callback which builds a CriteriaDelete.
+ * 
  * @Description: JpaDeleteCallback
  * @Author: Fred Feng
  * @Date: 18/10/2024

@@ -6,6 +6,8 @@ import jakarta.persistence.criteria.CriteriaQuery;
 
 /**
  * 
+ * Default JpaQueryResultSet implementation.
+ * 
  * @Description: JpaQueryResultSetImpl
  * @Author: Fred Feng
  * @Date: 20/10/2024

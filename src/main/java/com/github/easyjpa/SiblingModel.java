@@ -2,6 +2,7 @@ package com.github.easyjpa;
 
 import java.util.List;
 import java.util.Optional;
+import jakarta.persistence.criteria.From;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
@@ -23,7 +24,7 @@ public class SiblingModel<X, Y> implements Model<Y> {
     private final Model<X> model;
     private final Model<Y> sibling;
 
-    SiblingModel(Model<Y> sibling, Model<X> model) {
+    public SiblingModel(Model<Y> sibling, Model<X> model) {
         this.sibling = sibling;
         this.model = model;
     }
@@ -46,6 +47,23 @@ public class SiblingModel<X, Y> implements Model<Y> {
     @Override
     public boolean isManaged(Class<?> type) {
         return getType().equals(type);
+    }
+
+    @Override
+    public From<?, ?> getFrom() {
+        return sibling.getFrom();
+    }
+
+    @Override
+    public String aliasOf(String className) {
+        String alias = sibling.aliasOf(className);
+        return alias != null ? alias : model.aliasOf(className);
+    }
+
+    @Override
+    public From<?, ?> getFrom(String alias) {
+        From<?, ?> from = sibling.getFrom(alias);
+        return from != null ? from : model.getFrom(alias);
     }
 
     @Override

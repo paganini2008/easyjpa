@@ -9,6 +9,8 @@ import jakarta.persistence.criteria.Selection;
 
 /**
  * 
+ * Base transformer which reads each selected value from the query result and writes it into the destination object.
+ * 
  * @Description: AbstractTransformer
  * @Author: Fred Feng
  * @Date: 18/10/2024

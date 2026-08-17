@@ -3,6 +3,8 @@ package com.github.easyjpa;
 
 /**
  * 
+ * Metadata of an entity attribute.
+ * 
  * @Description: JpaAttributeDetail
  * @Author: Fred Feng
  * @Date: 18/10/2024

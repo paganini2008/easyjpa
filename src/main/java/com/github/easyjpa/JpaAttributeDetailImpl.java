@@ -5,6 +5,8 @@ import jakarta.persistence.metamodel.SingularAttribute;
 
 /**
  * 
+ * Default JpaAttributeDetail implementation.
+ * 
  * @Description: JpaAttributeDetailImpl
  * @Author: Fred Feng
  * @Date: 07/10/2024

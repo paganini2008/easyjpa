@@ -15,6 +15,11 @@ public interface JpaDelete<E> extends Executable {
 
     <X> JpaSubQuery<X, X> subQuery(Class<X> entityClass);
 
+    /** Name the table of the subquery, so that it and this statement tell theirs apart. */
+    <X> JpaSubQuery<X, X> subQuery(Class<X> entityClass, String alias);
+
     <X, Y> JpaSubQuery<X, Y> subQuery(Class<X> entityClass, Class<Y> resultClass);
+
+    <X, Y> JpaSubQuery<X, Y> subQuery(Class<X> entityClass, String alias, Class<Y> resultClass);
 
 }

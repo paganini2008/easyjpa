@@ -11,8 +11,11 @@ import jakarta.persistence.criteria.CriteriaDelete;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.CriteriaUpdate;
 import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 
 /**
+ * 
+ * Entry points of the query, page, update and delete statements.
  * 
  * @Description: JpaDaoSupport
  * @Author: Fred Feng
@@ -31,69 +34,49 @@ public class JpaDaoSupport<E, ID> extends SimpleJpaRepository<E, ID>
 
     @Override
     public <T> T getSingleResult(JpaQueryCallback<T> callback) {
-        try {
-            CriteriaBuilder builder = em.getCriteriaBuilder();
-            CriteriaQuery<T> query = callback.doInJpa(builder);
-            TypedQuery<T> typedQuery = em.createQuery(query);
-            return typedQuery.getSingleResult();
-        } finally {
-            TableAlias.clear();
-        }
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<T> query = callback.doInJpa(builder);
+        TypedQuery<T> typedQuery = em.createQuery(query);
+        return typedQuery.getSingleResult();
     }
 
     @Override
     public <T> List<T> getResultList(JpaQueryCallback<T> callback) {
-        try {
-            CriteriaBuilder builder = em.getCriteriaBuilder();
-            CriteriaQuery<T> query = callback.doInJpa(builder);
-            TypedQuery<T> typedQuery = em.createQuery(query);
-            return typedQuery.getResultList();
-        } finally {
-            TableAlias.clear();
-        }
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<T> query = callback.doInJpa(builder);
+        TypedQuery<T> typedQuery = em.createQuery(query);
+        return typedQuery.getResultList();
     }
 
     @Override
     public <T> List<T> getResultList(JpaQueryCallback<T> callback, int maxResults,
             long firstResult) {
-        try {
-            CriteriaBuilder builder = em.getCriteriaBuilder();
-            CriteriaQuery<T> query = callback.doInJpa(builder);
-            TypedQuery<T> typedQuery = em.createQuery(query);
-            if (firstResult >= 0) {
-                typedQuery.setFirstResult((int) firstResult);
-            }
-            if (maxResults > 0) {
-                typedQuery.setMaxResults(maxResults);
-            }
-            return typedQuery.getResultList();
-        } finally {
-            TableAlias.clear();
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<T> query = callback.doInJpa(builder);
+        TypedQuery<T> typedQuery = em.createQuery(query);
+        if (firstResult >= 0) {
+            typedQuery.setFirstResult((int) firstResult);
         }
+        if (maxResults > 0) {
+            typedQuery.setMaxResults(maxResults);
+        }
+        return typedQuery.getResultList();
     }
 
     @Override
     public int executeUpdate(JpaDeleteCallback<E> callback) {
-        try {
-            CriteriaBuilder builder = em.getCriteriaBuilder();
-            CriteriaDelete<E> delete = callback.doInJpa(builder);
-            Query query = em.createQuery(delete);
-            return query.executeUpdate();
-        } finally {
-            TableAlias.clear();
-        }
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaDelete<E> delete = callback.doInJpa(builder);
+        Query query = em.createQuery(delete);
+        return query.executeUpdate();
     }
 
     @Override
     public int executeUpdate(JpaUpdateCallback<E> callback) {
-        try {
-            CriteriaBuilder builder = em.getCriteriaBuilder();
-            CriteriaUpdate<E> update = callback.doInJpa(builder);
-            Query query = em.createQuery(update);
-            return query.executeUpdate();
-        } finally {
-            TableAlias.clear();
-        }
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaUpdate<E> update = callback.doInJpa(builder);
+        Query query = em.createQuery(update);
+        return query.executeUpdate();
     }
 
     @Override
@@ -132,14 +115,17 @@ public class JpaDaoSupport<E, ID> extends SimpleJpaRepository<E, ID>
 
     public <T> JpaPage<E, Tuple> page(Class<E> entityClass, String alias) {
         JpaQuery<E, Tuple> query = query(entityClass, alias);
-        JpaQuery<E, Long> counter = query(entityClass, alias, Long.class);
-        return new JpaPageImpl<E, Tuple>(query, counter, this);
+        return new JpaPageImpl<E, Tuple>(query, pageCount(entityClass, alias), this);
     }
 
     public <T> JpaPage<E, T> page(Class<E> entityClass, String alias, Class<T> resultClass) {
         JpaQuery<E, T> query = query(entityClass, alias, resultClass);
-        JpaQuery<E, Long> counter = query(entityClass, alias, Long.class);
-        return new JpaPageImpl<E, T>(query, counter, this);
+        return new JpaPageImpl<E, T>(query, pageCount(entityClass, alias), this);
+    }
+
+    /** The counting query of a pagination, whose shape is up to the provider in use. */
+    private JpaPageCount<E> pageCount(Class<E> entityClass, String alias) {
+        return JpaProviders.getProvider().createPageCount(entityClass, alias, em);
     }
 
 }

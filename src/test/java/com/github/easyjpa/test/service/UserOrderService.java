@@ -19,6 +19,7 @@ import com.github.easyjpa.test.dao.StockDao;
 import com.github.easyjpa.test.dao.UserDao;
 import com.github.easyjpa.test.entity.Order;
 import com.github.easyjpa.test.entity.OrderProduct;
+import com.github.easyjpa.test.entity.OrderStatus;
 import com.github.easyjpa.test.entity.Product;
 import com.github.easyjpa.test.entity.Stock;
 import com.github.easyjpa.test.entity.User;
@@ -85,6 +86,7 @@ public class UserOrderService {
         }
         Order order = new Order();
         order.setOrderDate(randomLocalDate().atStartOfDay());
+        order.setStatus(OrderStatus.values()[orderSeq++ % OrderStatus.values().length]);
         order.setTotalPrice(totalPrice);
         order.setUser(user);
         Order ref = orderDao.save(order);
@@ -92,6 +94,8 @@ public class UserOrderService {
         orderProducts.forEach(op -> op.setOrder(ref));
         orderProductDao.saveAll(orderProducts);
     }
+
+    private int orderSeq = 0;
 
     private LocalDate randomLocalDate() {
         int month = ThreadLocalRandom.current().nextInt(1, 3);
