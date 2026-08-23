@@ -4,7 +4,8 @@ package com.github.easyjpa;
 /**
  *
  * The counting query of a pagination, which keeps the same filtering, joining and grouping clauses
- * as the pagination itself. See {@link JpaPageCountImpl} for how the total gets counted.
+ * as the pagination itself. How the total gets counted is left to the provider, see
+ * {@link JpaProvider#createPageCount(Class, String, jakarta.persistence.EntityManager)}.
  *
  * @Description: JpaPageCount
  * @Author: Fred Feng
