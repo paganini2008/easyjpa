@@ -7,7 +7,6 @@ import org.junit.jupiter.api.TestInstance;
 import com.github.easyjpa.test.config.EclipseLinkJpaConfig;
 import com.github.easyjpa.test.config.HibernateJpaConfig;
 import com.github.easyjpa.test.config.StandardJpaConfig;
-import com.github.easyjpa.test.config.TestApplication;
 import com.github.easyjpa.test.service.ProductService;
 import com.github.easyjpa.test.service.UserOrderService;
 import com.github.easyjpa.test.service.UserService;

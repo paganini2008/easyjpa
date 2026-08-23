@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.math.BigDecimal;
 import java.util.List;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +15,6 @@ import com.github.easyjpa.JpaProviders;
 import com.github.easyjpa.LambdaUtils;
 import com.github.easyjpa.LambdaUtils.LambdaInfo;
 import com.github.easyjpa.PropertyUtils;
-import com.github.easyjpa.TableAlias;
 import com.github.easyjpa.page.PageRequest;
 import com.github.easyjpa.test.entity.Product;
 import com.github.easyjpa.test.entity.User;
@@ -33,11 +31,6 @@ import com.github.easyjpa.test.entity.User;
 public class UtilsTests {
 
     private static final Logger log = LoggerFactory.getLogger(UtilsTests.class);
-
-    @AfterEach
-    public void clearTableAlias() {
-        TableAlias.clear();
-    }
 
     /** The provider is the one the EntityDaoFactoryBean of the active configuration names. */
     @Test
@@ -95,18 +88,6 @@ public class UtilsTests {
 
         // A boolean attribute is read by 'isXxx' rather than by 'getXxx'
         assertEquals("vip", LambdaUtils.inspect(User::getVip).getAttributeName());
-    }
-
-    @Test
-    public void testTableAlias() {
-        TableAlias.put(Product.class, "p");
-        assertEquals("p", TableAlias.get(Product.class));
-        assertEquals("p", TableAlias.get(Product.class.getName()));
-        assertNull(TableAlias.get(User.class));
-        assertEquals(1, TableAlias.copy().size());
-
-        TableAlias.clear();
-        assertNull(TableAlias.get(Product.class));
     }
 
     @Test

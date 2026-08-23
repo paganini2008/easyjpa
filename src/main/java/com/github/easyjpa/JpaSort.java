@@ -30,7 +30,7 @@ public interface JpaSort {
     }
 
     static <X> JpaSort asc(Integer number) {
-        return asc(Fields.toInteger(number));
+        return asc((model, builder) -> builder.literal(number));
     }
 
     static JpaSort asc(Field<?> field) {
@@ -55,7 +55,7 @@ public interface JpaSort {
     }
 
     static <X> JpaSort desc(Integer number) {
-        return desc(Fields.toInteger(number));
+        return desc((model, builder) -> builder.literal(number));
     }
 
     static JpaSort desc(Field<?> field) {

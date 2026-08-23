@@ -4,6 +4,44 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - Unreleased
+
+### Breaking
+
+* **`TableAlias` is removed.** The library stopped using it in 1.0.0, once an alias became a matter
+  of the model of the statement rather than of the thread, and a thread local nobody writes to is
+  worth nothing to whoever reads from it.
+
+### Fixed
+
+* **Sorting by the position of a column stopped sorting on Hibernate 7.** The position went through
+  `toInteger(literal(n))`, which Hibernate 6 wrote as the bare `order by 2` and Hibernate 7 writes
+  as `order by cast(2 as integer)`, a constant every row shares. It is a plain literal now, which
+  both of them write as a position. `JpaSort.asc(int)` and `JpaSort.desc(int)` are what this is
+  about.
+
+### Changed
+
+* `mvn package` builds the sources and the javadoc alongside the jar, rather than leaving them to
+  the release profile.
+* The tests are booted without `@EntityScan`, a class Spring Boot 4 moved to another package. The
+  application of the tests sits above the entities and the daos instead, so they are found wherever
+  it runs.
+
+### Requires
+
+Spring Boot 3.1 or later, **Spring Boot 4 included**. Nothing had to change in the library itself:
+Hibernate 7, Jakarta Persistence 3.2 and the modules Spring Boot 4 was split into are all reached
+through the same api, and the one sorting bug above is the whole of what the upgrade turned up.
+
+On EclipseLink the version follows Spring Boot: 4.x for Spring Boot 3, and **5.0 or later for
+Spring Boot 4**, which brings Jakarta Persistence 3.2. EclipseLink 4 against that api throws
+`AbstractMethodError` on the methods 3.2 added, `getSingleResultOrNull()` among them.
+
+### Tested
+
+201 tests, run against Spring Boot 3.1, 3.5 and 4.1, on all three providers.
+
 ## [1.0.0] - 2026-08-17
 
 Everything below lands on top of `1.0.0-RC1`. The breaking changes are marked as such, and each of

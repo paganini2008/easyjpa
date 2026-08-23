@@ -1448,12 +1448,17 @@ query has to run on all of them.
 
 * JDK 17 or later
 * Maven 3.9 or later, or just the wrapper shipped along, `./mvnw`
-* Spring Boot 3.1 or later, the latest one preferred
+* Spring Boot 3.1 or later, Spring Boot 4 included, the latest one preferred
 * H2, PostgreSQL and MySQL are perfectly supported
 
-One jar covers every Spring Boot 3.1+, since the version your project manages is the one that ends
-up on the classpath. Spring Boot 3.0 falls short of a few things this library builds on, namely a
-derived table joined by an on condition and the parts of a date, so 3.1 is where it starts.
+One jar covers every Spring Boot from 3.1 up to 4.x, since the version your project manages is the
+one that ends up on the classpath: the whole set of tests is run against 3.1, 3.5 and 4.1. Spring
+Boot 3.0 falls short of a few things this library builds on, namely a derived table joined by an on
+condition and the parts of a date, so 3.1 is where it starts.
+
+On EclipseLink there is one version to watch: Spring Boot 4 brings Jakarta Persistence 3.2, which
+asks for EclipseLink 5.0 or later, while Spring Boot 3 stays on 3.1 and asks for EclipseLink 4.
+Neither of them is dragged in by this library, the one you declare is the one used.
 
 ### 2. Set it up in three steps
 
@@ -1824,9 +1829,9 @@ can do.
 
 | Provider | Database | Tests | Skipped |
 | --- | --- | --- | --- |
-| Hibernate | H2, PostgreSQL, MySQL | 202 | 0 |
-| Criteria API alone | H2, PostgreSQL, MySQL | 202 | 6 |
-| EclipseLink | H2, PostgreSQL, MySQL | 202 | 35 |
+| Hibernate | H2, PostgreSQL, MySQL | 201 | 0 |
+| Criteria API alone | H2, PostgreSQL, MySQL | 201 | 6 |
+| EclipseLink | H2, PostgreSQL, MySQL | 201 | 35 |
 
 ## Contribution and License
 
