@@ -1718,6 +1718,7 @@ it goes, and what it does not reach is said so rather than failed over silently:
 | Sorting by a column position | yes | no |
 | A function of the database passed through | yes | no |
 | year(), month(), day() | yes | no, the Criteria API defines none |
+| An expression cast to text by the database | yes | yes |
 
 Ask before you build, whenever you write for both:
 
@@ -1726,6 +1727,47 @@ if (JpaProviders.getProvider().supportsDerivedTable()) {
     ...
 }
 ```
+
+Every `no` above is a limit of the provider, not of EasyJPA, and every one of them is a method on
+`JpaProvider`, so the answer is there at runtime rather than in a stack trace. The tests ask the
+same way, which is why a run on EclipseLink reports skips rather than failures.
+
+### 7a. And what your database reaches
+
+Below the provider sits the database, and it has the last word on a few things no api can smooth
+over. The suite is run against five of them; H2, PostgreSQL and MySQL take everything, and these
+two do not:
+
+| | SQL Server | SQLite |
+| --- | --- | --- |
+| Sorting by a column position | yes on Hibernate, no on EclipseLink | yes |
+| Concatenating a numeric column by hand | cast it to a string first | yes |
+| A subquery quantified by `all` / `any` | yes | no, SQLite parses neither |
+| A function of the database passed through | yes | only the ones SQLite defines, no `repeat` |
+| A date read back as a date | yes | no type of its own, SQLite keeps text |
+| EclipseLink | yes | no, EclipseLink ships no SQLite platform |
+
+* **Sorting by a column position.** `order by 2` is what the database is asked for, and the Criteria
+  API has no way of saying it other than a literal. Hibernate writes the literal out and SQL Server
+  takes it. EclipseLink binds it as a parameter instead, and SQL Server orders by a column name or
+  a literal, never by a variable. This is the `supportsOrdinalSort()` of the table above, so a
+  query written for both should name the column rather than its position.
+* **Concatenating a numeric column by hand.** SQL Server reads `+` by its first operand, so a
+  `max(price)` asked for as a string and concatenated to one is taken for arithmetic, and the
+  string for a number that fails to parse. Other databases widen to text and go on. Cast the
+  column where SQL Server is a target.
+* **SQLite** is missing enough of SQL that four of the tests have nothing to run against: no
+  quantified subquery, no `repeat`, and no date type, so a date comes back as text that Hibernate
+  cannot parse. It also fills in a key on an `INTEGER PRIMARY KEY` alone, so the id of an entity is
+  best mapped as `IDENTITY` there; `GenerationType.AUTO` falls back to a sequence table, which
+  Hibernate writes from a transaction of its own and SQLite locks against the transaction already
+  open. The test profile maps it through `orm-sqlite.xml`, and an application would do the same.
+
+One driver setting is worth carrying into any SQL Server application: put
+`calcBigDecimalPrecision=true` in the url. Without it the driver binds every `BigDecimal` as
+`decimal(38,0)`, a `coalesce` against such a parameter overflows the precision SQL Server allows,
+the decimals are dropped to make room, and 0.90 is read back as 1. It has nothing to do with
+EasyJPA and everything to do with what a query returns.
 
 ### 8. Name the subquery of an update or a delete
 
@@ -1804,6 +1846,8 @@ the same.
 mvn test                                                # Hibernate, H2
 mvn test -Dspring.profiles.active=postgresql            # Hibernate, PostgreSQL
 mvn test -Dspring.profiles.active=mysql                 # Hibernate, MySQL
+mvn test -Dspring.profiles.active=sqlserver             # Hibernate, SQL Server
+mvn test -Dspring.profiles.active=sqlite                # Hibernate, SQLite
 mvn test -Dspring.profiles.active=standard              # the Criteria API alone
 mvn test -Dspring.profiles.active=standard,postgresql
 mvn test -Peclipselink                                  # EclipseLink
@@ -1827,11 +1871,16 @@ What a provider does not reach is skipped rather than failed, so a run on Eclips
 skips, and `UtilsTests#testProviderCapabilities` prints the whole list of what the provider at hand
 can do.
 
-| Provider | Database | Tests | Skipped |
-| --- | --- | --- | --- |
-| Hibernate | H2, PostgreSQL, MySQL | 201 | 0 |
-| Criteria API alone | H2, PostgreSQL, MySQL | 201 | 6 |
-| EclipseLink | H2, PostgreSQL, MySQL | 201 | 35 |
+| Provider | H2 | PostgreSQL | MySQL | SQL Server | SQLite |
+| --- | --- | --- | --- | --- | --- |
+| Hibernate | 201 | 201 | 201 | 201, 1 failed | 201, 4 failed |
+| Criteria API alone | 201, 6 skipped | 201, 6 skipped | 201, 6 skipped | 201, 6 skipped, 1 failed | 201, 6 skipped, 3 failed |
+| EclipseLink | 201, 39 skipped | 201, 39 skipped | 201, 39 skipped | 201, 39 skipped | not run |
+
+What is skipped is what the provider does not reach, and section 7 lists it. What failed belongs
+to the database rather than to this library, and section 7a lists it: one concatenation asked for
+as a string on SQL Server, and the four SQLite has no SQL for. EclipseLink is not run against
+SQLite at all, since no platform ships for it.
 
 ## Contribution and License
 

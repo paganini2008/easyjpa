@@ -489,6 +489,7 @@ public class ComplexQueryTests extends AbstractDaoTests {
     /** The same where join, aggregated by user and paginated. */
     @Test
     public void testWhereJoinAggregation() throws Exception {
+        assumeTrue(JpaProviders.getProvider().supportsOrdinalSort(), "The provider sorts by no column position");
         JpaPageResultSet<Tuple> resultSet = userDao.customPage().crossJoin(Order.class, "o")
                 .filter(new FilterList()
                         .eq(Property.forName("this", "id"), Property.forName("o", "user.id")).and()

@@ -110,12 +110,13 @@ public class ProductDaoTests extends AbstractDaoTests {
     @Test
     public void test3() {
         assumeTrue(JpaProviders.getProvider().supportsBeanProjection(), "The provider fills a bean through its constructor alone");
+        assumeTrue(JpaProviders.getProvider().supportsOrdinalSort(), "The provider sorts by no column position");
         List<ProductVo> dataList = new ArrayList<>();
         productDao.query(ProductVo.class)
                 .filter(new FilterList().gte(Product::getPrice, BigDecimal.valueOf(200))
                         .and(() -> new FilterList().eq(Product::getLocation, "Australia").or()
                                 .eq(Product::getLocation, "Thailand")))
-                .sort(JpaSort.desc(Fields.toInteger(4)))
+                .sort(JpaSort.desc(4))
                 .select(new ColumnList(Product::getName, Product::getLocation, Product::getPrice)
                         .addColumns(Fields.multiply(Product::getPrice, Product::getDiscount)
                                 .as("actualPrice")))
@@ -156,6 +157,7 @@ public class ProductDaoTests extends AbstractDaoTests {
 
     @Test
     public void test5() {
+        assumeTrue(JpaProviders.getProvider().supportsOrdinalSort(), "The provider sorts by no column position");
         List<ProductAggregationVo> dataList = new ArrayList<>();
         productDao.customQuery().groupBy(Product::getLocation)
                 .having(Restrictions.gt(Fields.avg(Product::getPrice), 50d)).sort(JpaSort.desc(4))

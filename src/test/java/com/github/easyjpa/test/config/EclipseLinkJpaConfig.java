@@ -7,6 +7,7 @@ import java.util.Properties;
 import javax.sql.DataSource;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -16,6 +17,7 @@ import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.EclipseLinkJpaVendorAdapter;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.util.StringUtils;
 import com.github.easyjpa.eclipselink.EclipseLinkEntityDaoFactoryBean;
 import jakarta.persistence.EntityManagerFactory;
 
@@ -36,6 +38,14 @@ import jakarta.persistence.EntityManagerFactory;
 @Configuration(proxyBeanMethods = false)
 public class EclipseLinkJpaConfig {
 
+    /** Spring Boot hands this to the entity manager it makes itself, this one is made here. */
+    @Value("${spring.jpa.mapping-resources:}")
+    private String mappingResources;
+
+    /** EclipseLink ships no platform for every database, so one can be named per profile. */
+    @Value("${eclipselink.target-database:}")
+    private String targetDatabase;
+
     @Bean
     public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
         LocalContainerEntityManagerFactoryBean factoryBean =
@@ -43,12 +53,18 @@ public class EclipseLinkJpaConfig {
         factoryBean.setDataSource(dataSource);
         factoryBean.setPackagesToScan("com.github.easyjpa.test.entity");
         factoryBean.setJpaVendorAdapter(new EclipseLinkJpaVendorAdapter());
+        if (StringUtils.hasText(mappingResources)) {
+            factoryBean.setMappingResources(mappingResources.split(","));
+        }
 
         Properties properties = new Properties();
         properties.setProperty("eclipselink.weaving", "false");
         properties.setProperty("eclipselink.ddl-generation", "drop-and-create-tables");
         properties.setProperty("eclipselink.ddl-generation.output-mode", "database");
         properties.setProperty("eclipselink.logging.level", "FINE");
+        if (StringUtils.hasText(targetDatabase)) {
+            properties.setProperty("eclipselink.target-database", targetDatabase);
+        }
         factoryBean.setJpaProperties(properties);
         return factoryBean;
     }

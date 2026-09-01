@@ -74,4 +74,14 @@ public class StandardProvider implements JpaProvider {
         return builder.function(part.name(), Integer.class, expression);
     }
 
+    /**
+     * The Criteria API names no cast of its own before Jakarta Persistence 3.2, so the function is
+     * asked for by the name every provider knows it by, and each of them writes the cast its
+     * database spells.
+     */
+    @Override
+    public Expression<String> asText(CriteriaBuilder builder, Expression<?> expression) {
+        return builder.function("str", String.class, expression);
+    }
+
 }

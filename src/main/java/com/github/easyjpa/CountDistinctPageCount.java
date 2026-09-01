@@ -119,7 +119,7 @@ public class CountDistinctPageCount<E> extends AbstractPageCount<E> {
     private Expression<String> getStringExpression(Expression<?> expression) {
         return CharSequence.class.isAssignableFrom(expression.getJavaType())
                 ? (Expression<String>) expression
-                : expression.as(String.class);
+                : JpaProviders.getProvider().asText(builder, expression);
     }
 
     private boolean isSimpleType(Class<?> javaType) {

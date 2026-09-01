@@ -117,6 +117,21 @@ public interface JpaProvider {
     /** The year, the month or the day of a date, which every database spells its own way. */
     Expression<Integer> extract(CriteriaBuilder builder, Expression<?> expression, DatePart part);
 
+    /**
+     * An expression turned into text by the database itself.
+     *
+     * <p>
+     * {@link Expression#as(Class)} casts in the type system of Java and no further: a provider is
+     * free to render the column exactly as it stands, and Hibernate does. A database that widens
+     * whatever it is handed to text lets that pass, while one that does not, SQL Server among
+     * them, refuses to concatenate a date or a number it was never given as text. A provider able
+     * to write a real cast says so here.
+     * </p>
+     */
+    default Expression<String> asText(CriteriaBuilder builder, Expression<?> expression) {
+        return expression.as(String.class);
+    }
+
     /** The part of a date to extract. */
     enum DatePart {
         YEAR, MONTH, DAY

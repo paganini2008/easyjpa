@@ -8,11 +8,13 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import com.github.easyjpa.JpaProviders;
 import com.github.easyjpa.ColumnList;
 import com.github.easyjpa.FieldList;
 import com.github.easyjpa.Fields;
@@ -174,6 +176,7 @@ public class PaginationTests extends AbstractDaoTests {
     /** Paginate the sales of every product, which is a grouping query upon two joins. */
     @Test
     public void testPaginateSalesPerProduct() throws Exception {
+        assumeTrue(JpaProviders.getProvider().supportsOrdinalSort(), "The provider sorts by no column position");
         JpaPageResultSet<Tuple> resultSet = orderDao.customPage()
                 .join(Order::getOrderProducts, "op", null).join(OrderProduct::getProduct, "p", null)
                 .groupBy(new FieldList().addFields(Product::getName))

@@ -255,6 +255,7 @@ public class OrderDaoTests extends AbstractDaoTests {
 
     @Test
     public void test7() {
+        assumeTrue(JpaProviders.getProvider().supportsOrdinalSort(), "The provider sorts by no column position");
         List<UserOrderVo> dataList = new ArrayList<>();
         userDao.customPage().leftJoin(User::getOrders, "o", null)
                 .join(Order::getOrderProducts, "op", null).join(OrderProduct::getProduct, "p", null)
