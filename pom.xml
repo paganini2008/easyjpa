@@ -89,6 +89,11 @@
             <artifactId>sqlite-jdbc</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.oracle.database.jdbc</groupId>
+            <artifactId>ojdbc11</artifactId>
+            <scope>test</scope>
+        </dependency>
         <!-- SQLite is not a dialect Hibernate ships with, it lives in the community ones -->
         <dependency>
             <groupId>org.hibernate.orm</groupId>

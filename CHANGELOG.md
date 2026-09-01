@@ -4,7 +4,7 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.1] - Unreleased
+## [2.0.0] - Unreleased
 
 ### Breaking
 
@@ -42,21 +42,25 @@ All notable changes to this project are documented here. The format follows
 * The tests are booted without `@EntityScan`, a class Spring Boot 4 moved to another package. The
   application of the tests sits above the entities and the daos instead, so they are found wherever
   it runs.
-* **SQL Server and SQLite join the databases the suite is run against**, by the profiles `sqlserver`
-  and `sqlite`. The whole of both runs is in the README, together with what each database refuses
-  and why. Nothing in the library had to change for either of them.
+* **SQL Server, SQLite and Oracle join the databases the suite is run against**, by the profiles
+  `sqlserver`, `sqlite` and `oracle`. The whole of every run is in the README, with the version of
+  each database and driver, and with what each one refuses and why.
 
 ### Requires
 
-Spring Boot 3.1 or later, **Spring Boot 4 included**. Nothing had to change in the library itself:
-Hibernate 7, Jakarta Persistence 3.2 and the modules Spring Boot 4 was split into are all reached
-through the same api, and the one sorting bug above is the whole of what the upgrade turned up.
+**Spring Boot 4.0 or later.** From here the line of the library follows the line of Spring Boot,
+and the two are maintained apart: 2.0.x is written for Spring Boot 4, 1.0.x carries on for Spring
+Boot 3. They are not one jar built twice.
 
-On EclipseLink the version follows Spring Boot: 4.x for Spring Boot 3, and **5.0 or later for
-Spring Boot 4**, which brings Jakarta Persistence 3.2. EclipseLink 4 against that api throws
-`AbstractMethodError` on the methods 3.2 added, `getSingleResultOrNull()` among them.
+Little had to change to reach Spring Boot 4: Hibernate 7, Jakarta Persistence 3.2 and the modules
+Spring Boot 4 was split into are all reached through the same api, and the sorting bug above is
+the whole of what the upgrade itself turned up.
 
-### Note for SQL Server and SQLite
+On EclipseLink, **5.0 or later**, since Spring Boot 4 brings Jakarta Persistence 3.2. EclipseLink 4
+against that api throws `AbstractMethodError` on the methods 3.2 added, `getSingleResultOrNull()`
+among them.
+
+### Note for SQL Server, SQLite and Oracle
 
 Section 7a of the README is new and says what each database does not take, next to section 7 and
 what each provider does not reach. In short: on SQL Server put `calcBigDecimalPrecision=true` in
@@ -64,21 +68,26 @@ the url, or the driver binds every `BigDecimal` as `decimal(38,0)` and a `coales
 loses its decimals, 0.90 coming back as 1; and sort by naming the column rather than its position
 if EclipseLink is a target. On SQLite map the ids as `IDENTITY`, since `GenerationType.AUTO` falls
 back to a sequence table written from a transaction of its own, which locks against the one
-already open.
+already open. On Oracle 23 and later, Hibernate writes a group by no derived table can be joined
+on — it names the select item by an alias it numbered internally rather than by the one the query
+gave it — so until Hibernate has that, an `OracleDialect` subclass built with
+`DatabaseVersion.make(21)` is the way around it.
 
 ### Tested
 
-201 tests, run against Spring Boot 3.1, 3.5 and 4.1, on all three providers, and against five
-databases on Spring Boot 4.1:
+201 tests, on all three providers and against six databases, all of it on Spring Boot 4.1:
 
-| Provider | H2 | PostgreSQL | MySQL | SQL Server | SQLite |
-| --- | --- | --- | --- | --- | --- |
-| Hibernate | 201 | 201 | 201 | 201, 1 failed | 201, 4 failed |
-| Criteria API alone | 201, 6 skipped | 201, 6 skipped | 201, 6 skipped | 201, 6 skipped, 1 failed | 201, 6 skipped, 3 failed |
-| EclipseLink | 201, 39 skipped | 201, 39 skipped | 201, 39 skipped | 201, 39 skipped | not run |
+| Provider | H2 | PostgreSQL | MySQL | SQL Server | SQLite | Oracle |
+| --- | --- | --- | --- | --- | --- | --- |
+| Hibernate | 201 | 201 | 201 | 201, 1 failed | 201, 4 failed | 201, 4 failed |
+| Criteria API alone | 201, 6 skipped | 201, 6 skipped | 201, 6 skipped | 201, 6 skipped, 1 failed | 201, 6 skipped, 3 failed | 201, 6 skipped |
+| EclipseLink | 201, 39 skipped | 201, 39 skipped | 201, 39 skipped | 201, 39 skipped | not run | 201, 39 skipped, 2 failed |
 
-What is skipped is what the provider does not reach, what failed is what the database does not
-take, and neither is the library answering wrongly.
+Against H2 2.4.240, SQLite 3.53.2, MySQL 9.6.0, PostgreSQL 16.13, SQL Server 2022 (16.00.4265) and
+Oracle AI Database 26ai Free (23.26.3.0.0), each on the driver Spring Boot 4.1 manages.
+
+What is skipped is what the provider does not reach, what failed is what the database, or the
+provider on that database, does not take, and neither is the library answering wrongly.
 
 ## [1.0.0] - 2026-08-17
 

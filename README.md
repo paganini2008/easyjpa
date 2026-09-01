@@ -1448,17 +1448,27 @@ query has to run on all of them.
 
 * JDK 17 or later
 * Maven 3.9 or later, or just the wrapper shipped along, `./mvnw`
-* Spring Boot 3.1 or later, Spring Boot 4 included, the latest one preferred
-* H2, PostgreSQL and MySQL are perfectly supported
+* Spring Boot 4.0 or later for the 2.0.x line, 3.1 or later for the 1.0.x one
+* H2, PostgreSQL, MySQL, SQL Server, SQLite and Oracle are all run against, and section 7a
+  says what the last three of them do not take
 
-One jar covers every Spring Boot from 3.1 up to 4.x, since the version your project manages is the
-one that ends up on the classpath: the whole set of tests is run against 3.1, 3.5 and 4.1. Spring
-Boot 3.0 falls short of a few things this library builds on, namely a derived table joined by an on
-condition and the parts of a date, so 3.1 is where it starts.
+**The line of this library follows the line of Spring Boot**, and the two are maintained apart:
+2.0.x is written for Spring Boot 4, 1.0.x for Spring Boot 3. They are not one jar built twice, so
+declare the one your project is on:
 
-On EclipseLink there is one version to watch: Spring Boot 4 brings Jakarta Persistence 3.2, which
-asks for EclipseLink 5.0 or later, while Spring Boot 3 stays on 3.1 and asks for EclipseLink 4.
-Neither of them is dragged in by this library, the one you declare is the one used.
+| Your Spring Boot | The version to use |
+| --- | --- |
+| 4.0 and later | 2.0.x, this one |
+| 3.1 to 3.5 | 1.0.x |
+| 3.0 and earlier | none, see below |
+
+Spring Boot 3.0 falls short of a few things this library builds on, namely a derived table joined
+by an on condition and the parts of a date, so 3.1 is where the 1.0.x line starts. Everything
+below, and every test behind it, is the 2.0.x line on Spring Boot 4.
+
+On EclipseLink, take 5.0 or later: Spring Boot 4 brings Jakarta Persistence 3.2, and EclipseLink 4
+against that api throws `AbstractMethodError` on the methods 3.2 added. It is not dragged in by
+this library, the one you declare is the one used.
 
 ### 2. Set it up in three steps
 
@@ -1468,7 +1478,7 @@ Neither of them is dragged in by this library, the one you declare is the one us
 <dependency>
     <groupId>com.github.paganini2008</groupId>
     <artifactId>easyjpa-spring-boot-starter</artifactId>
-    <version>1.0.0</version>  <!-- use the latest version here -->
+    <version>2.0.0</version>  <!-- Spring Boot 4; on Spring Boot 3 take the 1.0.x line -->
 </dependency>
 ```
 
@@ -1501,7 +1511,7 @@ Spring Boot autoconfigures Hibernate alone:
 <dependency>
     <groupId>org.eclipse.persistence</groupId>
     <artifactId>org.eclipse.persistence.jpa</artifactId>
-    <version>4.0.4</version>
+    <version>5.0.1</version>  <!-- 5.0 or later, Spring Boot 4 brings Jakarta Persistence 3.2 -->
 </dependency>
 ```
 
@@ -1735,17 +1745,19 @@ same way, which is why a run on EclipseLink reports skips rather than failures.
 ### 7a. And what your database reaches
 
 Below the provider sits the database, and it has the last word on a few things no api can smooth
-over. The suite is run against five of them; H2, PostgreSQL and MySQL take everything, and these
-two do not:
+over. The suite is run against six of them; H2, PostgreSQL and MySQL take everything, and these
+three do not:
 
-| | SQL Server | SQLite |
-| --- | --- | --- |
-| Sorting by a column position | yes on Hibernate, no on EclipseLink | yes |
-| Concatenating a numeric column by hand | cast it to a string first | yes |
-| A subquery quantified by `all` / `any` | yes | no, SQLite parses neither |
-| A function of the database passed through | yes | only the ones SQLite defines, no `repeat` |
-| A date read back as a date | yes | no type of its own, SQLite keeps text |
-| EclipseLink | yes | no, EclipseLink ships no SQLite platform |
+| | SQL Server | SQLite | Oracle |
+| --- | --- | --- | --- |
+| Sorting by a column position | yes on Hibernate, no on EclipseLink | yes | yes |
+| Concatenating a numeric column by hand | cast it to a string first | yes | yes |
+| A subquery quantified by `all` / `any` | yes | no, SQLite parses neither | yes |
+| A function of the database passed through | yes | only the ones SQLite defines, no `repeat` | yes |
+| A date read back as a date | yes | no type of its own, SQLite keeps text | yes |
+| Joining a derived table | yes | yes | not on Hibernate against Oracle 23 and later |
+| Several columns of one Tuple, paginated | yes | yes | not on EclipseLink |
+| EclipseLink | yes | no, EclipseLink ships no SQLite platform | yes, with the above |
 
 * **Sorting by a column position.** `order by 2` is what the database is asked for, and the Criteria
   API has no way of saying it other than a literal. Hibernate writes the literal out and SQL Server
@@ -1762,6 +1774,20 @@ two do not:
   best mapped as `IDENTITY` there; `GenerationType.AUTO` falls back to a sequence table, which
   Hibernate writes from a transaction of its own and SQLite locks against the transaction already
   open. The test profile maps it through `orm-sqlite.xml`, and an application would do the same.
+
+* **Oracle 23 and later, on Hibernate: joining a derived table.** From Oracle 23 a group by may
+  name a select item by its alias, and Hibernate 7.4 answers that by writing the alias rather than
+  the expression — but the alias it writes is the one it numbered internally, `c0`, while the
+  select item carries the name the query gave it. `group by c0` names nothing, and Oracle says so.
+  Nothing in the query is at fault; the same four tests pass against the very same database once
+  the dialect is told it is Oracle 21, and passed on every earlier Oracle. Until Hibernate has it,
+  a `DatabaseVersion.make(21)` subclass of `OracleDialect` is a two-line way around it, and
+  EclipseLink and the Criteria API alone are unaffected.
+* **Oracle on EclipseLink: several columns of one Tuple, paginated.** EclipseLink writes no aliases
+  into the sql it builds for a Tuple, then paginates on Oracle by wrapping it as
+  `select a.* from ( ... ) a`, and Oracle will not have two columns of that inner query going by
+  the same name. Naming the columns does not help, since the names never reach the sql. Two tests
+  meet it. Hibernate and the Criteria API alone are unaffected.
 
 One driver setting is worth carrying into any SQL Server application: put
 `calcBigDecimalPrecision=true` in the url. Without it the driver binds every `BigDecimal` as
@@ -1848,6 +1874,7 @@ mvn test -Dspring.profiles.active=postgresql            # Hibernate, PostgreSQL
 mvn test -Dspring.profiles.active=mysql                 # Hibernate, MySQL
 mvn test -Dspring.profiles.active=sqlserver             # Hibernate, SQL Server
 mvn test -Dspring.profiles.active=sqlite                # Hibernate, SQLite
+mvn test -Dspring.profiles.active=oracle                # Hibernate, Oracle
 mvn test -Dspring.profiles.active=standard              # the Criteria API alone
 mvn test -Dspring.profiles.active=standard,postgresql
 mvn test -Peclipselink                                  # EclipseLink
@@ -1871,16 +1898,32 @@ What a provider does not reach is skipped rather than failed, so a run on Eclips
 skips, and `UtilsTests#testProviderCapabilities` prints the whole list of what the provider at hand
 can do.
 
-| Provider | H2 | PostgreSQL | MySQL | SQL Server | SQLite |
-| --- | --- | --- | --- | --- | --- |
-| Hibernate | 201 | 201 | 201 | 201, 1 failed | 201, 4 failed |
-| Criteria API alone | 201, 6 skipped | 201, 6 skipped | 201, 6 skipped | 201, 6 skipped, 1 failed | 201, 6 skipped, 3 failed |
-| EclipseLink | 201, 39 skipped | 201, 39 skipped | 201, 39 skipped | 201, 39 skipped | not run |
+| Provider | H2 | PostgreSQL | MySQL | SQL Server | SQLite | Oracle |
+| --- | --- | --- | --- | --- | --- | --- |
+| Hibernate | 201 | 201 | 201 | 201, 1 failed | 201, 4 failed | 201, 4 failed |
+| Criteria API alone | 201, 6 skipped | 201, 6 skipped | 201, 6 skipped | 201, 6 skipped, 1 failed | 201, 6 skipped, 3 failed | 201, 6 skipped |
+| EclipseLink | 201, 39 skipped | 201, 39 skipped | 201, 39 skipped | 201, 39 skipped | not run | 201, 39 skipped, 2 failed |
+
+These are the versions each one was run against:
+
+| Database | Version | Driver |
+| --- | --- | --- |
+| H2 | 2.4.240 | 2.4.240, in memory |
+| SQLite | 3.53.2 | sqlite-jdbc 3.53.2.1 |
+| MySQL | 9.6.0 | mysql-connector-j 9.7.0 |
+| PostgreSQL | 16.13 | postgresql 42.7.13 |
+| SQL Server | 2022, 16.00.4265 | mssql-jdbc 13.4.0 |
+| Oracle | AI Database 26ai Free, 23.26.3.0.0 | ojdbc11 23.26.3.0.0 |
+
+Every driver version is the one Spring Boot 4.1 manages, so a project on that Boot gets them by
+adding the dependency and nothing else.
 
 What is skipped is what the provider does not reach, and section 7 lists it. What failed belongs
-to the database rather than to this library, and section 7a lists it: one concatenation asked for
-as a string on SQL Server, and the four SQLite has no SQL for. EclipseLink is not run against
-SQLite at all, since no platform ships for it.
+to the database or to the provider on that database rather than to this library, and section 7a
+lists it: one concatenation asked for as a string on SQL Server, the four SQLite has no SQL for,
+the derived table Hibernate writes a wrong group by for on Oracle 23 and later, and the paginated
+Tuple EclipseLink writes without aliases on Oracle. EclipseLink is not run against SQLite at all,
+since no platform ships for it.
 
 ## Contribution and License
 
