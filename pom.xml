@@ -24,8 +24,8 @@
         </developer>
     </developers>
     <scm>
-        <connection>https://github.com/paganini2008/easyjpa.git</connection>
-        <developerConnection>https://github.com/paganini2008/easyjpa.git</developerConnection>
+        <connection>scm:git:https://github.com/paganini2008/easyjpa.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/paganini2008/easyjpa.git</developerConnection>
         <url>https://github.com/paganini2008/easyjpa</url>
     </scm>
     <properties>
@@ -36,6 +36,8 @@
         <java.version>17</java.version>
         <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
         <maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
+        <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
+        <central-publishing-plugin.version>0.9.0</central-publishing-plugin.version>
     </properties>
     <dependencies>
         <dependency>
@@ -243,15 +245,22 @@
             </build>
         </profile>
         <profile>
-            <id>release-4</id>
+            <id>release</id>
             <build>
                 <plugins>
-                    <!-- The sources and the javadoc come from the main build, this one only signs -->
+                    <!-- The passphrase comes from MAVEN_GPG_PASSPHRASE; the plugin settles
+                         the pinentry mode itself, so no gpgArguments are needed here.
+                         Skip signing on a pure snapshot push with -Dgpg.skip=true. -->
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
+                        <version>${maven-gpg-plugin.version}</version>
+                        <configuration>
+                            <bestPractices>true</bestPractices>
+                        </configuration>
                         <executions>
                             <execution>
+                                <id>sign-artifacts</id>
                                 <phase>verify</phase>
                                 <goals>
                                     <goal>sign</goal>
@@ -259,33 +268,20 @@
                             </execution>
                         </executions>
                     </plugin>
+                    <!-- A snapshot goes straight to the snapshot repository of the Portal,
+                         a release is staged, validated and, being autoPublish, let through. -->
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>${central-publishing-plugin.version}</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <publishingServerId>central</publishingServerId>
+                            <autoPublish>true</autoPublish>
+                        </configuration>
+                    </plugin>
                 </plugins>
             </build>
-            <distributionManagement>
-                <snapshotRepository>
-                    <id>paganini2008</id>
-                    <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-                </snapshotRepository>
-                <repository>
-                    <id>paganini2008</id>
-                    <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-                </repository>
-            </distributionManagement>
         </profile>
     </profiles>
-    <repositories>
-        <repository>
-            <id>spring-milestones</id>
-            <name>Spring Milestones</name>
-            <url>https://repo.spring.io/milestone</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>aliyun</id>
-            <name>aliyun</name>
-            <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
-        </repository>
-    </repositories>
 </project>

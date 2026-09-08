@@ -1482,6 +1482,25 @@ this library, the one you declare is the one used.
 </dependency>
 ```
 
+While `2.0.0` is still being cut, `2.0.0-SNAPSHOT` goes to the snapshot repository of the Central
+Portal, which Maven reads from no project that has not named it:
+
+``` xml
+<repositories>
+    <repository>
+        <id>central-portal-snapshots</id>
+        <name>Central Portal Snapshots</name>
+        <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+        <releases>
+            <enabled>false</enabled>
+        </releases>
+        <snapshots>
+            <enabled>true</enabled>
+        </snapshots>
+    </repository>
+</repositories>
+```
+
 **Step 2** – make EasyJPA the repository implementation of Spring Data, naming the provider you
 run on
 
