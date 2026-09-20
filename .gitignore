@@ -1,0 +1,29 @@
+# maven
+/target/
+.flattened-pom.xml
+.mvn/wrapper/maven-wrapper.jar
+
+# Eclipse
+.classpath
+.project
+/.metadata/
+/.settings/
+.factorypath
+
+# IntelliJ IDEA
+/.idea/
+*.iml
+*.ipr
+*.iws
+/out/
+
+# VS Code
+/.vscode/
+
+# other
+/tmp/
+/logs/
+*.log
+/bin/
+.dbeaver
+.DS_Store
