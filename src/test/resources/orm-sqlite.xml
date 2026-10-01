@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    SQLite takes one writer at a time, and the sequence table Hibernate falls back to for
+    GenerationType.AUTO is written from a transaction of its own, which deadlocks against the
+    transaction of the test. IDENTITY needs no such table. Only the id is overridden here, every
+    other mapping stays on the annotations.
+-->
+<entity-mappings xmlns="https://jakarta.ee/xml/ns/persistence/orm"
+                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                 xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence/orm
+                                     https://jakarta.ee/xml/ns/persistence/orm/orm_3_2.xsd"
+                 version="3.2">
+    <entity class="com.github.easyjpa.test.entity.User">
+        <attributes>
+            <id name="id">
+                <generated-value strategy="IDENTITY"/>
+            </id>
+        </attributes>
+    </entity>
+    <entity class="com.github.easyjpa.test.entity.Product">
+        <attributes>
+            <id name="id">
+                <generated-value strategy="IDENTITY"/>
+            </id>
+        </attributes>
+    </entity>
+    <entity class="com.github.easyjpa.test.entity.Order">
+        <attributes>
+            <id name="id">
+                <generated-value strategy="IDENTITY"/>
+            </id>
+        </attributes>
+    </entity>
+    <entity class="com.github.easyjpa.test.entity.OrderProduct">
+        <attributes>
+            <id name="id">
+                <generated-value strategy="IDENTITY"/>
+            </id>
+        </attributes>
+    </entity>
+    <entity class="com.github.easyjpa.test.entity.Stock">
+        <attributes>
+            <id name="id">
+                <generated-value strategy="IDENTITY"/>
+            </id>
+        </attributes>
+    </entity>
+</entity-mappings>
