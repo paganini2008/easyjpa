@@ -1,17 +1,17 @@
-# EasyJPA：三行写完的类型安全动态查询
+# EasyJPA：Criteria API 的全部能力，三行写完
 
-> **每个查询都是 Lambda，每个 join 都有名字，一个 JPQL 字符串都不用写。**
+## 1. 项目概览
 
-**EasyJPA** 是一个 Spring Boot starter，它在 JPA Criteria API 之上包了一层流式的、Lambda 驱动的
-API。Criteria 给你的类型安全和动态拼装能力一样不少，而 `CriteriaBuilder` / `Root` /
-`Predicate[]` 那套让人读不下去的样板代码全部消失。Join、子查询、分组、分页、更新、删除、原生
-SQL——全都在一条从上往下读得通的链式调用里。
+**EasyJPA —— Criteria API 的全部能力，三行写完。**
 
-一屏代码就能说完全部卖点。
+EasyJPA 是一个 Spring Boot starter，在 JPA Criteria API 之上包了一层流式、Lambda 驱动的 API。
+每个条件都是方法引用，每个 join 都有名字，一个 JPQL 字符串都不用写。Join、子查询、分组、分页、
+更新、原生 SQL，全部在一条从上往下读得通的链式调用里。
 
-**Criteria API 的写法：**
+全部卖点一屏说完：
 
 ```java
+// ── Criteria API 的写法 ────────────────────────────────────────────────────────
 CriteriaBuilder cb = em.getCriteriaBuilder();
 CriteriaQuery<User> cq = cb.createQuery(User.class);
 Root<User> root = cq.from(User.class);
@@ -20,35 +20,44 @@ predicates.add(cb.equal(root.get("username"), "Jack"));
 predicates.add(cb.equal(root.get("password"), "123456"));
 cq.select(root).where(cb.and(predicates.toArray(new Predicate[0])));
 User user = em.createQuery(cq).getSingleResult();
-```
 
-**EasyJPA 的写法：**
-
-```java
+// ── EasyJPA 的写法 ────────────────────────────────────────────────────────────
 User user = userDao.query()
         .filter(new FilterList().eq(User::getUsername, "Jack").eq(User::getPassword, "123456"))
         .selectThis().one();
 ```
 
-同一个查询，同样的类型安全，生成的 SQL 也一模一样。
+同一个查询，同样的类型安全，生成的 SQL 一模一样。
 
----
+## 2. 它解决什么问题
 
-## 两步装好
+Criteria API 是 JPA 里唯一类型安全的动态查询方式，但几乎没人愿意用它。三个条件的过滤要写十行
+`CriteriaBuilder` 管道代码；多分支 join 要手工维护一堆 `Join<?, ?>` 变量；关联子查询基本没法读。
+于是团队退回到 JPQL 字符串或者 Spring Data 方法名——然后丢掉类型安全，或者丢掉可组合性，或者两样
+都丢。
 
-**第一步** —— 加依赖。
+第二个问题更隐蔽，代价更大。一次分页其实是**两条**语句：列表查询和计数查询，而它们是分开写的，
+于是会漂移。而当查询带 `group by` 时，顺手写的 `count(*)` 数的是行数而不是分组数，总数直接就是错的。
+EasyJPA 把两条语句从同一份定义推导出来，并用派生表来数分组。
+
+| | |
+| --- | --- |
+| **保留** | Criteria 的类型安全和动态组合能力 |
+| **丢掉** | `CriteriaBuilder` / `Root` / `Predicate[]` 样板代码 |
+| **修掉** | 会漂移的分页计数，以及把行数当分组数的错误总数 |
+
+## 3. 快速开始
+
+**安装** —— 当前版本是 `1.0.0-SNAPSHOT`，在 Central Portal 的快照仓库里；没有声明过这个仓库的项目
+Maven 是读不到的：
 
 ```xml
 <dependency>
     <groupId>com.github.paganini2008</groupId>
     <artifactId>easyjpa-spring-boot-starter</artifactId>
-    <version>2.0.0-SNAPSHOT</version>  <!-- Spring Boot 4；Spring Boot 3 用 1.0.0-SNAPSHOT -->
+    <version>1.0.0-SNAPSHOT</version>
 </dependency>
-```
 
-当前版本是 `2.0.0-SNAPSHOT`，发布在 Central Portal 的快照仓库里，所以还要把这个仓库声明出来：
-
-```xml
 <repositories>
     <repository>
         <id>central-portal-snapshots</id>
@@ -59,7 +68,7 @@ User user = userDao.query()
 </repositories>
 ```
 
-**第二步** —— 让 Spring Data 用 EasyJPA 的仓储实现。
+**指定 Provider：**
 
 ```java
 @EntityScan(basePackages = {"com.example.entity"})
@@ -70,55 +79,106 @@ public class JpaConfig {
 }
 ```
 
-完事。接下来每个 DAO 继承 `EntityDao` 而不是 `JpaRepository`：
+**继承 `EntityDao`：**
 
 ```java
 public interface UserDao extends EntityDao<User, Long> {
 }
 ```
 
-`EntityDao` **本身就是** `JpaRepository` —— `save`、`findById`、`deleteAll` 这些一个都没少，
-EasyJPA 只是在上面加了查询构建器。
-
----
-
-## 下文用到的模型
-
-本文所有例子都取自 EasyJPA 自己的测试用例，跑在一个小型电商模型上：
-
-```
-User  ──< Order ──< OrderProduct >── Product
-                                         │
-                                       Stock
-```
-
-`User` 有 `username`、`email`、`vip`；`Order` 有 `totalPrice`、`orderDate`、`status`；
-`Product` 有 `name`、`price`、`discount`、`location`。没什么意外。
-
----
-
-## 条件过滤
-
-`Restrictions` 构造单个条件，`FilterList` 把多个串起来。
+`EntityDao` **本身就是** `JpaRepositoryImplementation`，所以 `save`、`findById`、`deleteAll` 一个
+都没少。然后查：
 
 ```java
-userDao.count(Restrictions.eq(User::getVip, true));
-userDao.count(Restrictions.isNull(User::getEmail));
-userDao.count(Restrictions.in(User::getUsername, List.of("Jack", "Petter", "Nobody")));
-userDao.count(Restrictions.like(User::getEmail, "jpatest"));
+List<User> users = userDao.query()
+        .filter(Restrictions.eq(User::getVip, true))
+        .sort(JpaSort.asc(User::getUsername))
+        .selectThis().list();
 ```
 
-每一个都接收方法引用，所以字段改名是编译期报错，而不是上线之后才发现。
+配置到此结束。没有属性要加，没有参数要调。
 
-取反是一个方法，不是另一个类：
+## 4. 环境要求
 
-```java
-Restrictions.in(User::getUsername, usernames).not()          // not in
-Restrictions.notLike(User::getEmail, "00")
-    .or(Restrictions.eq(User::getUsername, "Jack"))          // or
+| | 最低版本 | 说明 |
+| --- | --- | --- |
+| Java | 17 | |
+| Spring Boot | 3.1 | 3.0 缺少带 `on` 条件的派生表 join，以及日期部件 |
+| Jakarta Persistence | 3.1 | |
+| JPA Provider | Hibernate 6.6 | 或 EclipseLink 4.0.4，或任意 Criteria 实现 |
+| 构建 | Maven 3.9 | |
+
+版本线跟随 Spring Boot 线，两条线独立维护：
+
+| 你的 Spring Boot | 用哪个版本 |
+| --- | --- |
+| 4.0 及以上 | `2.0.x` |
+| 3.1 – 3.5 | `1.0.x` |
+| 3.0 及以下 | 不支持 |
+
+## 5. 工作原理
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  你的代码          userDao.query().filter(...).sort(...).selectThis().list()  │
+└──────────────────────────────────┬──────────────────────────────────────────┘
+                                   │  方法引用 + 别名
+┌──────────────────────────────────▼──────────────────────────────────────────┐
+│  EASYJPA          Model ─────────── 把别名解析成具体的表                     │
+│                   Filter · Field · Column · JpaSort                         │
+│                   JpaPageResultSet ─ 一份定义，两条语句                      │
+└──────────────────────────────────┬──────────────────────────────────────────┘
+                                   │  「这里能用派生表吗？」
+┌──────────────────────────────────▼──────────────────────────────────────────┐
+│  JpaProvider        Hibernate   │   EclipseLink   │   Standard              │
+│                     supportsDerivedTable() · supportsRightJoin() · …        │
+└──────────────────────────────────┬──────────────────────────────────────────┘
+                                   │
+┌──────────────────────────────────▼──────────────────────────────────────────┐
+│  JAKARTA PERSISTENCE   CriteriaBuilder · CriteriaQuery · Root · Predicate    │
+└──────────────────────────────────┬──────────────────────────────────────────┘
+                                   │
+┌──────────────────────────────────▼──────────────────────────────────────────┐
+│  数据库       H2 · PostgreSQL · MySQL · SQL Server · SQLite · Oracle        │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-嵌套条件怎么想就怎么写 —— `vip or (username in ('Scott','Lee') and email is not null)`：
+| 机制 | 一句话 |
+| --- | --- |
+| **别名解析** | Lambda 指的是*实体*而不是表；别名只在正在构建的那条语句内查找，绝不越界——所以外层查询和它的子查询各认各的表 |
+| **一份定义，两条语句** | `JpaPageResultSet` 持有列表查询，并由它推导出计数查询，两者不可能漂移 |
+| **Provider 靠问不靠猜** | 每个可选特性都是 `JpaProvider` 上的一个 `boolean`，运行期可读 |
+
+分页的拆分是最值得看的一部分：
+
+```
+      customPage().join(...).filter(...).groupBy(...).select(...)
+                              一份定义
+                                    │
+                 ┌──────────────────┴──────────────────┐
+                 ▼                                     ▼
+            list(10, 0)                           rowCount()
+                 │                                     │
+   select … offset ? rows                   无 group by → select count(1) from (…) d
+          fetch first ? rows only            有 group by → select count(1) from
+                                                          ( <分组结果> ) d
+```
+
+## 6. 代码示例
+
+下面每一段 SQL 都是 Hibernate 实际生成的，从测试用例跑 H2 时抓下来的。数据模型：
+
+```
+User ──< Order ──< OrderProduct >── Product        User.vip, Order.status, Order.totalPrice
+                                        │          Product.name/price/location
+                                      Stock        Stock.amount
+```
+
+### 示例 1 —— 嵌套条件
+
+**输入** —— `vip or (username in ('Scott','Lee') and email is not null)`，按用户名排序。
+
+**执行**
 
 ```java
 List<User> users = userDao.query()
@@ -129,159 +189,106 @@ List<User> users = userDao.query()
         .selectThis().list();
 ```
 
----
+**输出**
 
-## 关联查询
+```sql
+select u1_0.id, u1_0.email, u1_0.password, u1_0.username, u1_0.vip
+from example_user u1_0
+where u1_0.vip = ? or u1_0.username in (?, ?) and u1_0.email is not null
+order by u1_0.username
+```
 
-用 Lambda 来 join，EasyJPA 自己算出是从哪张表长出来的。给每个 join 起一个短别名，后面就靠它来指认。
+### 示例 2 —— 四张表，两条分支
+
+**输入** —— 订单明细连带订单、客户、商品；只要有折扣的商品、已付款或已发货的订单；最新的在前。
+
+**执行**
 
 ```java
 orderProductDao.customPage()
-        .join(OrderProduct::getOrder, "o", null)      // OrderProduct -> Order
-        .join(Order::getUser, "u", null)              // Order        -> User
-        .join(OrderProduct::getProduct, "p", null)    // OrderProduct -> Product，另一条分支
+        .join(OrderProduct::getOrder, "o", null)      // OrderProduct → Order
+        .join(Order::getUser, "u", null)              // Order        → User
+        .join(OrderProduct::getProduct, "p", null)    // OrderProduct → Product，第二条分支
+        .filter(new FilterList().notNull(Product::getDiscount).and()
+                .in(Property.forName("o", "status"), List.of(OrderStatus.PAID, OrderStatus.SHIPPED)))
+        .sort(JpaSort.desc(Order::getOrderDate), JpaSort.asc(Product::getName))
+        .select(new ColumnList().addColumns(User::getUsername)
+                .addColumns(Order::getId, Order::getOrderDate, Order::getStatus)
+                .addColumns(Product::getName, Product::getPrice)
+                .addColumns(OrderProduct::getAmount)
+                .addColumns(Fields.multiply(Property.forName(Product::getPrice),
+                        Property.forName(OrderProduct::getAmount)).as("subtotal")));
 ```
+
+**输出**
 
 ```sql
+select u1_0.username, o1_0.id, o1_0.order_date, o1_0.status,
+       p1_0.name, p1_0.price, op1_0.amount, (p1_0.price * op1_0.amount)
 from example_order_product op1_0
-join example_order o1_0 on o1_0.id = op1_0.order_id
-join example_user u1_0 on u1_0.id = o1_0.user_id
+join example_order   o1_0 on o1_0.id = op1_0.order_id
+join example_user    u1_0 on u1_0.id = o1_0.user_id
 join example_product p1_0 on p1_0.id = op1_0.product_id
+where p1_0.discount is not null and o1_0.status in (?, ?)
+order by o1_0.order_date desc, p1_0.name
+offset ? rows fetch first ? rows only
 ```
 
-注意第三个 join 是从 `OrderProduct` 重新分叉的，而不是接着 `User` 往下走。Lambda 自带它所属的实体，
+注意第三个 join 是从 `OrderProduct` 重新分叉的，而不是接着 `User` 往下走：Lambda 自带它所属的实体，
 所以关联树写出来就是它读起来的样子。
 
-`leftJoin`、`rightJoin`、`crossJoin` 也都在，`on` 条件就是第三个参数：
+### 示例 3 —— 数分组而不是数行的分组分页
 
-```java
-orderDao.customQuery().leftJoin(Order::getOrderProducts, "op",
-                                Restrictions.gt("op", "amount", 10))
-```
+**输入** —— 畅销榜：每个商品卖了多少件、出现在多少个订单里、带来多少营收，只保留卖出超过一次的；
+再要一个总数用于翻页。
 
----
-
-## 分组、聚合、映射成 VO
-
-```java
-List<UserOrderVo> dataList = userDao.customQuery()
-        .leftJoin(User::getOrders, "o", null)
-        .groupBy(new FieldList(User::getUsername))
-        .sort(JpaSort.asc(User::getUsername))
-        .select(new ColumnList().addColumns(User::getUsername)
-                .addColumns(Fields.count(Order::getId).as("orderAmount"),
-                            Fields.sum(Order::getTotalPrice).as("totalPrice"),
-                            Fields.max(Order::getTotalPrice).as("maxPrice")))
-        .setTransformer(Transformers.asBean(UserOrderVo.class))
-        .list();
-```
-
-你给计算列起的别名（`.as("orderAmount")`）就是它落到 VO 的哪个属性上。映射成 Map 时同理，别名即 key。
-
-不想要 VO？换个形状就行：
-
-```java
-.setTransformer(Transformers.asMap())                   // Map<String, Object>
-.setTransformer(Transformers.asCaseInsensitiveMap())    // key 不区分大小写
-.setTransformer(Transformers.asList())                  // List<Object>
-.setTransformer(Transformers.asBean(SalesVo.class))     // 映射成 VO
-```
-
-`having` 用来过滤分组：
-
-```java
-.having(Restrictions.gt(Fields.count(Order::getId), 0L))
-```
-
----
-
-## 计算列
-
-算术和函数都在 `Fields` 里：
-
-```java
-Fields.multiply(Property.forName(Product::getPrice),
-                Property.forName(OrderProduct::getAmount)).as("subtotal")
-
-Fields.concat(Fields.upper(User::getUsername), "!")
-Fields.countDistinct(Property.forName("this", "order.id")).as("orderAmount")
-Fields.month(Order::getOrderDate).as("month")     // 按数据库方言各自渲染
-```
-
-`IfExpression` 就是 `CASE WHEN`：
-
-```java
-IfExpression<String, String> area = new IfExpression<String, String>("location")
-        .when("China", "Asia")
-        .otherwise("Other");
-
-productDao.customQuery()
-        .select(new ColumnList().addColumns(area.as("area")))
-        .list();
-```
-
----
-
-## 算得准的分页
-
-这是大多数 Criteria 代码出错的地方。一次分页 = 一个列表查询 **加** 一个计数查询，EasyJPA 构建一次，
-两个都给你：
-
-```java
-JpaPageResultSet<Tuple> resultSet = orderDao.customPage()
-        .join(Order::getUser, "u", null)
-        .filter(Restrictions.gt(Order::getTotalPrice, BigDecimal.valueOf(1000)))
-        .select(new ColumnList().addColumns(Order::getId).addColumns(User::getUsername));
-
-long total = resultSet.rowCount();          // 一条语句，一行数据都不取
-List<Tuple> rows = resultSet.list(10, 0);   // 前 10 行
-```
-
-查询带分组时，`rowCount()` 数的是**分组数**而不是行数 —— 通过派生表实现，一条语句搞定，`having`
-也算得对。这个 bug 你不用再去排查了：
+**执行**
 
 ```java
 JpaPageResultSet<Tuple> resultSet = orderProductDao.customPage()
         .join(OrderProduct::getProduct, "p", null)
         .groupBy(new FieldList().addFields(Product::getName))
         .having(Restrictions.gt(Fields.count(OrderProduct::getId), 1L))
+        .sort(JpaSort.desc(2))
         .select(new ColumnList().addColumns(Product::getName)
-                .addColumns(Fields.sum(OrderProduct::getAmount).as("soldAmount")));
+                .addColumns(Fields.sum(OrderProduct::getAmount).as("soldAmount"),
+                        Fields.countDistinct(Property.forName("this", "order.id")).as("orderAmount"),
+                        Fields.sum(Fields.multiply(Property.forName(Product::getPrice),
+                                Property.forName(OrderProduct::getAmount))).as("turnover")));
 
-resultSet.rowCount();   // 商品的个数，不是订单明细的行数
+long groups = resultSet.rowCount();
+List<SalesVo> rows = resultSet.setTransformer(Transformers.asBean(SalesVo.class)).list();
 ```
 
-翻页本身也是一套小 API：
+**输出 —— 列表查询**
 
-```java
-PageResponse<Map<String, Object>> page = userDao.customPage()
-        .sort(JpaSort.asc(User::getId))
-        .select(new ColumnList(User::getId, User::getUsername, User::getVip))
-        .setTransformer(Transformers.asCaseInsensitiveMap())
-        .paginate(PageRequest.of(2));       // 每页 2 条
-
-page.getTotalRecords();
-page.getTotalPages();
-page.hasNextPage();
-page.nextPage().getContent();
-page.lastPage().isLastPage();
+```sql
+select p1_0.name, sum(op1_0.amount), count(distinct op1_0.order_id),
+       sum((p1_0.price * op1_0.amount))
+from example_order_product op1_0
+join example_product p1_0 on p1_0.id = op1_0.product_id
+group by p1_0.name having count(op1_0.id) > ?
+order by 2 desc
+offset ? rows
 ```
 
-或者把每一页都流式处理掉：
+**输出 —— 由同一份定义推导出的计数查询**
 
-```java
-resultSet.setTransformer(Transformers.asCaseInsensitiveMap())
-        .paginate(PageRequest.of(10))
-        .forEachPage(eachPage -> eachPage.getContent().forEach(this::handle));
+```sql
+select count(1) from (
+    select 1 from example_order_product op1_0
+    join example_product p1_0 on p1_0.id = op1_0.product_id
+    group by p1_0.name having count(op1_0.id) > ?
+) derived1_0(c)
 ```
 
----
+一条语句，`having` 也算进去了，一个分组都不用取。这个 bug 你不用再去排查了。
 
-## 子查询
+### 示例 4 —— 关联子查询
 
-子查询要**从用它的那个查询上创建**，这是两者产生关联的关键。
+**输入** —— 下过单的用户。
 
-**exists** —— 下过单的用户：
+**执行**
 
 ```java
 JpaQuery<User, User> query = userDao.query();
@@ -292,44 +299,22 @@ JpaSubQuery<Order, Long> subQuery = query.subQuery(Order.class, "o", Long.class)
 List<User> customers = query.filter(Restrictions.exists(subQuery)).selectThis().list();
 ```
 
-**not exists** —— 从来没卖出去过的商品：
+**输出**
 
-```java
-query.filter(Restrictions.exists(subQuery).not()).selectThis().list();
+```sql
+select u1_0.id, u1_0.email, u1_0.password, u1_0.username, u1_0.vip
+from example_user u1_0
+where exists (select o1_0.id from example_order o1_0 where o1_0.user_id = u1_0.id)
 ```
 
-**in，配合分组子查询** —— 回头客：
+子查询是**从**外层查询上创建的，这就是两者产生关联的原因。`.not()` 变成 `not exists`；把 `exists`
+换成 `in` 就是 `in` 子查询。
 
-```java
-JpaQuery<User, User> query = userDao.query();
-JpaSubQuery<Order, Long> subQuery = query.subQuery(Order.class, "o", Long.class);
-subQuery.groupBy(new FieldList().addFields(Order::getUser))
-        .having(Restrictions.gt(Fields.count(Order::getId), 1L))
-        .select(Property.forName("o", "user.id", Long.class));
+### 示例 5 —— 把聚合当派生表 join 进来
 
-query.filter(Restrictions.in(Property.forName(User::getId), subQuery)).selectThis().list();
-```
+**输入** —— 每个商品连带它的销量，但不要每行跑一遍关联子查询。
 
-**当成查询列** —— 每个商品连带它的库存：
-
-```java
-JpaQuery<Product, Tuple> query = productDao.customQuery();
-JpaSubQuery<Stock, Long> stock = query.subQuery(Stock.class, "s", Long.class)
-        .filter(Restrictions.eq(Stock::getProductId, Product::getId))
-        .select(Fields.max(Stock::getAmount));
-
-query.select(new ColumnList().addColumns(Product::getName)
-                .addColumns(Column.forSubQuery(stock, "stockAmount")))
-     .list();
-```
-
-子查询照样可以嵌套、join、分组、去重，跟普通查询没有区别。
-
----
-
-## 把派生表 join 进来
-
-当每一行都需要另一张表的聚合值时，把聚合结果作为一张表 join 一次，而不是每行跑一遍关联子查询：
+**执行**
 
 ```java
 JpaQuery<Product, Tuple> query = productDao.customQuery();
@@ -337,137 +322,144 @@ JpaSubQuery<OrderProduct, Tuple> sales = query.subQuery(OrderProduct.class, "op"
 sales.groupBy(new FieldList().addFields(Property.forName("op", "product.id")))
      .select(new ColumnList()
              .addColumns(Property.forName("op", "product.id").as("productId"))
-             .addColumns(Fields.sum("op", "amount", Integer.class).as("soldAmount")));
+             .addColumns(Fields.sum("op", "amount", Integer.class).as("soldAmount"),
+                         Fields.count("op", "id").as("orderAmount")));
 
-List<Map<String, Object>> dataList = query
-        .joinSubQuery(sales, "s", Restrictions.eq(Property.forName("s", "productId"),
-                                                  Property.forName("this", "id")))
-        .sort(JpaSort.desc(Property.forName("s", "soldAmount")))
-        .select(new ColumnList().addColumns(Product::getName)
-                .addColumns(Property.forName("s", "soldAmount").as("soldAmount")))
-        .setTransformer(Transformers.asCaseInsensitiveMap())
-        .list();
+query.joinSubQuery(sales, "s", Restrictions.eq(Property.forName("s", "productId"),
+                                               Property.forName("this", "id")))
+     .sort(JpaSort.desc(Property.forName("s", "soldAmount")))
+     .select(new ColumnList().addColumns(Product::getName, Product::getPrice)
+             .addColumns(Property.forName("s", "soldAmount").as("soldAmount")))
+     .setTransformer(Transformers.asCaseInsensitiveMap()).list();
 ```
 
----
+**输出**
 
-## 更新与删除
-
-```java
-userDao.update().set(User::getVip, true)
-       .filter(Restrictions.eq(User::getVip, false))
-       .execute();
-
-userDao.update().set(User::getPassword, "654321", User::getEmail, "nobody@jpatest.com")
-       .filter(Restrictions.eq(User::getUsername, "Jack"))
-       .execute();
+```sql
+select p1_0.name, p1_0.price, s1_0.soldAmount, s1_0.orderAmount
+from example_product p1_0
+join (select op1_0.product_id c0, sum(op1_0.amount) c1, count(op1_0.id) c2
+      from example_order_product op1_0
+      group by c0) s1_0(productId, soldAmount, orderAmount)
+  on s1_0.productId = p1_0.id
+order by 3 desc
 ```
 
-用另一个字段赋值，或者用表达式赋值：
+### 示例 6 —— 用表达式更新，用子查询删除
+
+**输入** —— 把用户名改成大写加感叹号；库存减一；删掉从没下过单的用户。
+
+**执行**
 
 ```java
-userDao.update().setProperty("email", "username")                        // email = username
-       .filter(Restrictions.eq(User::getUsername, "Terry")).execute();
-
 userDao.update().setField(User::getUsername, Fields.concat(Fields.upper(User::getUsername), "!"))
        .filter(Restrictions.eq(User::getUsername, "Lee")).execute();
 
 stockDao.update().setField(Stock::getAmount, Fields.minusValue(Stock::getAmount, 1L))
         .filter(Restrictions.gt(Stock::getAmount, 0L)).execute();
-```
 
-删除同样可以关联子查询 —— 比如清掉从没下过单的用户：
-
-```java
 JpaDelete<User> delete = userDao.delete();
 JpaSubQuery<Order, Order> subQuery = delete.subQuery(Order.class)
         .filter(Restrictions.eq(Order::getUser, User::getId));
-
-int rows = delete.filter(Restrictions.exists(subQuery).not()).execute();
+delete.filter(Restrictions.exists(subQuery).not()).execute();
 ```
 
----
+**输出**
 
-## Fetch Join
+```sql
+update example_user  u1_0 set username = (upper(u1_0.username)||?) where u1_0.username = ?
+update example_stock s1_0 set amount = (s1_0.amount - cast(? as bigint)) where s1_0.amount > ?
 
-查询之后再去读关联，每个实体要多发一条 SELECT。直接一起取回来：
-
-```java
-orderDao.query().fetch(Order::getUser).selectThis().list();                  // to-one
-userDao.query().leftFetch(User::getOrders).distinct().selectThis().list();   // 集合
+delete from example_user u1_0
+where not exists (select o1_0.id from example_order o1_0 where o1_0.user_id = u1_0.id)
 ```
 
-分页时只在列表查询上 fetch，计数查询上不会，所以这里多的是一个 join，而不是 N+1：
+### 剩下的 API，一张表看完
 
-```java
-JpaPageResultSet<Order> resultSet = orderDao.page().fetch(Order::getUser)
-        .filter(Restrictions.ne(Order::getStatus, OrderStatus.CANCELLED))
-        .selectThis();
-```
+| 你要什么 | 怎么调 |
+| --- | --- |
+| 实体本身 | `dao.query()` |
+| 若干列映射成 VO | `dao.query(Vo.class)` |
+| 任意列 | `dao.customQuery()` → `Tuple` |
+| 同上，外加总数 | `dao.page()` · `dao.customPage()` → `JpaPageResultSet` |
+| Fetch 关联 | `fetch(Order::getUser)` · `leftFetch(User::getOrders).distinct()` |
+| `CASE WHEN` | `new IfExpression<>(attr).when(a, b).otherwise(c)` |
+| 日期部件 | `Fields.year/month/day(...)` |
+| 任意数据库函数 | `Function.build("LOWER", String.class, Product::getName)` |
+| 结果形状 | `Transformers.asBean/asMap/asCaseInsensitiveMap/asList/noop` |
+| 原生 SQL | `dao.queryForMap(sql, args)`，`rowCount()` 和 `paginate()` 照用 |
 
----
+## 7. 配置项
 
-## 原生 SQL，分页照旧
+EasyJPA **自己没有任何配置属性** —— 没有 `spring.easyjpa.*` 命名空间。要配的是 Provider，以及三个
+数据库的驱动参数。
 
-Criteria 表达不了的，一个方法调用就能退回原生 SQL，结果按不区分大小写映射：
-
-```java
-List<Map<String, Object>> dataList = userDao.queryForMap(
-        "select u.username as username, count(o.id) as order_amount"
-                + " from example_user u left join example_order o on o.user_id = u.id"
-                + " group by u.username order by u.username",
-        new Object[0]).list();
-```
-
-它返回的是 `PageableQuery`，所以 `rowCount()` 和 `paginate(...)` 用法跟上面完全一致。
-
----
-
-## 选对入口
-
-整个 API 的入口就这一张表：
-
-| 你要什么 | 入口 | 返回什么 |
+| 配什么 | 配在哪 | 值 |
 | --- | --- | --- |
-| 实体本身 | `dao.query()` | 实体类型 |
-| 若干列映射成 VO | `dao.query(Vo.class)` | 指定的类型 |
-| 任意列 | `dao.customQuery()` | `Tuple` |
-| 同上，外加总数 | `dao.page()` / `dao.customPage()` | `JpaPageResultSet` |
-| 更新或删除 | `dao.update()` / `dao.delete()` | 影响行数 |
-| Criteria 够不着的 | `dao.queryForMap(sql, args)` | `PageableQuery` |
+| Provider | `@EnableJpaRepositories(repositoryFactoryBeanClass = …)` | `HibernateEntityDaoFactoryBean`（默认）· `EclipseLinkEntityDaoFactoryBean` · `StandardEntityDaoFactoryBean` |
+| EclipseLink | `spring.autoconfigure.exclude` | `…orm.jpa.HibernateJpaAutoConfiguration` |
+| SQL Server | JDBC url | `calcBigDecimalPrecision=true` —— 否则每个 `BigDecimal` 都按 `decimal(38,0)` 绑定，`0.90` 读回来变成 `1` |
+| SQLite | 实体主键 | `GenerationType.IDENTITY` —— `AUTO` 要用序列表，而 SQLite 会锁死它 |
+| Oracle 23+ 配 Hibernate | `OracleDialect` 子类 | `DatabaseVersion.make(21)` |
 
----
+## 8. 横向对比
 
-## 支持哪些 Provider 和数据库
+只比特性，不含性能数字——这里没有任何 benchmark。
 
-Hibernate 是默认实现，所有特性都跑得通。EclipseLink 和纯 Criteria API 也支持，能做到哪一步就是哪一步
-—— 做不到的地方，EasyJPA 在运行期直接告诉你，而不是让你去某个栈底捞异常：
+| | EasyJPA | Criteria API | Spring Data `Specification` | QueryDSL |
+| --- | --- | --- | --- | --- |
+| 属性类型安全 | 方法引用 | 元模型或字符串 | 元模型或字符串 | 生成的 `Q` 类 |
+| 需要代码生成 | 不需要 | 不需要 | 不需要 | 需要注解处理器 |
+| 动态组合 | ✅ | 手工拼 `Predicate[]` | ✅ | ✅ |
+| 多分支 join | 一个 join 一行 | 手工维护 `Join<?,?>` | 手工 | ✅ |
+| 关联子查询 | 从外层查询上创建 | 手工 | 很别扭 | ✅ |
+| `group by` 的分页计数 | 派生表，一条语句 | 自己写 | 自己写 | 自己写 |
+| 派生表 join | `joinSubQuery(...)` | 手工 | ❌ | 有限 |
+| 原生 SQL 保留分页 | ✅ | ❌ | ❌ | 另一套 API |
+| 运行期可查 Provider 能力 | `JpaProvider` 开关 | ❌ | ❌ | ❌ |
 
-```java
-if (JpaProviders.getProvider().supportsDerivedTable()) {
-    ...
-}
-```
+### Provider 与数据库覆盖
 
-同一套测试会在 **H2、PostgreSQL、MySQL、SQL Server、SQLite、Oracle** 上，以三种 Provider 各跑一遍。
-哪些组合会跳过哪些用例、为什么跳过，README 里逐条写明。
+同一套 202 个测试，三种 Provider × 六种数据库各跑一遍。
 
----
+| | H2 2.3 | PostgreSQL 16 | MySQL 9.6 | SQL Server 16 | SQLite 3.49 | Oracle 23 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Hibernate | ✅ | ✅ | ✅ | ⚠️ 1 | ⚠️ 3 | ⚠️ 4 |
+| 纯 Criteria API | ✅ | ✅ | ✅ | ⚠️ 1 | ⚠️ 3 | ✅ |
+| EclipseLink | ✅ | ✅ | ✅ | ✅ | ❌ 无平台支持 | ⚠️ 2 |
 
-## 试一下
+每一个 ⚠️ 都归属于数据库本身或该数据库上的 Provider，没有一个是 EasyJPA 生成的查询出了问题。
+README 里逐条写明了是哪些。
 
-```java
-userDao.query()
-       .filter(Restrictions.eq(User::getVip, true))
-       .sort(JpaSort.asc(User::getUsername))
-       .selectThis()
-       .list();
-```
+## 9. 已知限制与权衡
 
-如果这段读起来就是你想要的那个查询，那你已经会用这套 API 了。
+- **别名是字符串。** `"op"` 打错是运行期报错，不是编译期。
+- **不是自动装配的。** 要自己指定 factory bean，没有 `@AutoConfiguration`。
+- **Criteria API 就是天花板。** 窗口函数、CTE、`UNION` 还得走原生 SQL。
+- **EclipseLink 能做的比 Hibernate 少。** 没有派生表、没有 right join、子查询不能当查询列——
+  这些都通过 `JpaProvider` 报出来，而不是静默兜底。
+- **Fetch 集合 + 分页会在内存里分页。** 分页时只 fetch to-one 关联。
+- **不支持响应式。** 只有阻塞式 JDBC。
+- **不适合**以静态查询为主的项目——那种场景 Spring Data 方法名更短。
 
-**GitHub：**[paganini2008/easyjpa](https://github.com/paganini2008/easyjpa)，MIT 协议。
-Spring Boot 3 用户走 `1.0.x` 线，Spring Boot 4 用户走 `2.0.x` 线。
-`2.0.0` 正式版正在路上，在那之前请用 `2.0.0-SNAPSHOT`。
+## 10. 核心结论
 
-<!-- 建议标签：java, springboot, jpa, hibernate -->
+1. **一条链替掉十行代码。** `query().filter().sort().select().list()` 取代整套
+   `CriteriaBuilder` / `Root` / `Predicate[]` 仪式。
+2. **全程方法引用**，字段改名是编译期报错而不是上线后才发现。不需要代码生成，不需要注解处理器。
+3. **Join 自己会分叉。** Lambda 自带所属实体，四张表两条分支的 join 就是顺着读下来的四行调用。
+4. **一次分页 = 一份定义，两条语句。** 计数查询由列表查询推导而来，不可能和它漂移。
+5. **分组分页数的是分组**，走派生表，一条语句，`having` 也算进去——这正是手写分页最容易算错的地方。
+6. **子查询自己完成关联**，因为它是从用它的那个查询上创建的。当过滤条件、当查询列、当比较的一侧、
+   或者嵌套，写法都一样。
+7. **聚合只 join 一次**，作为派生表，而不是每行跑一遍关联子查询。
+8. **Provider 的能力缺口是一个 `boolean`，不是一个栈底异常。**
+   `JpaProviders.getProvider().supportsXxx()` 在你动手构建之前就给出答案。
+9. **测试覆盖到位** —— 202 个用例、三种 Provider、六种数据库，每一个有记录的失败都归因到数据库或
+   Provider，没有藏起来。
+10. **零配置。** 没有属性要配；指定一个 factory bean、继承 `EntityDao`，就这两件事。
+
+**GitHub** —— [paganini2008/easyjpa](https://github.com/paganini2008/easyjpa)，MIT 协议。
+Spring Boot 3 走 `1.0.x` 线，Spring Boot 4 走 `2.0.x` 线。
+
+<!-- 建议标签：java, springboot, jpa, hibernate, database -->
