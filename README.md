@@ -1,18 +1,23 @@
+<div align="center">
+
 # EasyJPA
+
+**Criteria API power. Three lines, not thirty.**
+
+Type-safe dynamic queries for Spring Data JPA — every condition a method reference, every join a
+name, not a single JPQL string. Joins, subqueries, grouping, pagination, updates and native SQL all
+compose in one chain you read top to bottom.
 
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0+-brightgreen?style=flat-square&logo=springboot)
 ![Java](https://img.shields.io/badge/Java-17+-orange?style=flat-square&logo=openjdk)
 ![JPA](https://img.shields.io/badge/Jakarta%20Persistence-3.2-blue?style=flat-square)
+![Hibernate](https://img.shields.io/badge/Hibernate%20%7C%20EclipseLink-supported-yellow?style=flat-square&logo=hibernate)
 ![License](https://img.shields.io/badge/License-MIT-lightgrey?style=flat-square)
 
-**Type-safe dynamic queries for Spring Data JPA — every query a lambda, every join a name, not a
-single JPQL string.**
-
-EasyJPA puts a fluent, lambda-driven API over the JPA Criteria API. You keep Criteria's type safety
-and dynamic composition, and you drop the `CriteriaBuilder` / `Root` / `Predicate[]` ceremony.
+</div>
 
 ```java
-// The Criteria API
+// ── The Criteria API ──────────────────────────────────────────────────────────
 CriteriaBuilder cb = em.getCriteriaBuilder();
 CriteriaQuery<User> cq = cb.createQuery(User.class);
 Root<User> root = cq.from(User.class);
@@ -22,62 +27,115 @@ predicates.add(cb.equal(root.get("password"), "123456"));
 cq.select(root).where(cb.and(predicates.toArray(new Predicate[0])));
 User user = em.createQuery(cq).getSingleResult();
 
-// EasyJPA
+// ── EasyJPA ───────────────────────────────────────────────────────────────────
 User user = userDao.query()
         .filter(new FilterList().eq(User::getUsername, "Jack").eq(User::getPassword, "123456"))
         .selectThis().one();
 ```
 
-## Table of Contents
-
-- [Features](#features)
-- [Requirements](#requirements)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Usage](#usage)
-- [How It Works](#how-it-works)
-- [Provider and Database Support](#provider-and-database-support)
-- [Running the Tests](#running-the-tests)
-- [License](#license)
+**Contents** —
+[Features](#features) ·
+[How It Works](#how-it-works) ·
+[Requirements](#requirements) ·
+[Quick Start](#quick-start) ·
+[Examples](#examples) ·
+[Configuration](#configuration) ·
+[Compatibility](#compatibility--comparison) ·
+[Docs](#documentation) ·
+[License](#contributing--license)
 
 ## Features
 
-- **Lambda-driven** — method references everywhere, so a renamed field is a compile error
-- **Dynamic queries** — filters compose and nest without string concatenation
-- **All join kinds** — inner, left, right and cross, plus derived tables
-- **Subqueries** — as a filter, as a column, as one side of a comparison, nested arbitrarily
-- **Computed columns** — arithmetic, functions, `CASE WHEN`, date parts rendered per database
-- **Grouping and having**, with pagination that counts groups rather than rows
-- **Pagination** that builds the listing query and its counting query from one definition
-- **Update and delete** with correlated subqueries
-- **Fetch joins** to kill N+1
-- **Result transformers** — entity, VO, `Map`, `List` or `Tuple`
-- **Native SQL** fallback that keeps pagination
-- **Hibernate by default**, EclipseLink and the plain Criteria API supported
+| The problem | What EasyJPA does about it |
+| --- | --- |
+| Criteria queries take 10 lines before they say anything | One fluent chain — `query().filter().sort().select().list()` |
+| String attribute names break silently on rename | Method references throughout; a rename is a compile error |
+| Dynamic `Predicate` lists are assembled by hand | `Restrictions` / `FilterList` compose and nest, `.not()` negates |
+| Multi-branch joins force you to track `Join<?,?>` variables | `join(Entity::getAttr, "alias", on)` — the lambda knows its own table |
+| A paginated count query drifts out of sync with the listing one | `JpaPageResultSet` derives both from one definition |
+| `count(*)` over a `group by` counts rows, not groups | `rowCount()` wraps the grouping in a derived table — one statement, `having` included |
+| Correlated subqueries are the hardest thing to write in Criteria | `query.subQuery(...)` is built *from* its outer query, so it correlates itself |
+| Aggregates per row cost a subquery per row | `joinSubQuery(...)` joins the aggregate once as a derived table |
+| Reading an association after the query costs N+1 selects | `fetch()` / `leftFetch()` on the same chain |
+| Results need to be entities here, VOs there, maps elsewhere | `Transformers.asBean/asMap/asList/asCaseInsensitiveMap` |
+| Whatever Criteria cannot express means dropping the API | `queryForMap(sql, args)` — native SQL that keeps `rowCount()` and `paginate()` |
+| Provider gaps surface as stack traces | `JpaProviders.getProvider().supportsXxx()` answers before you build |
+
+## How It Works
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  YOUR CODE        userDao.query().filter(...).sort(...).selectThis().list()  │
+└──────────────────────────────────┬──────────────────────────────────────────┘
+                                   │  method references + aliases
+┌──────────────────────────────────▼──────────────────────────────────────────┐
+│  EASYJPA          Model ─────────── resolves an alias to a table            │
+│                   Filter · Field · Column · JpaSort                         │
+│                   JpaPageResultSet ─ one definition, two statements         │
+└──────────────────────────────────┬──────────────────────────────────────────┘
+                                   │  "may I use a derived table here?"
+┌──────────────────────────────────▼──────────────────────────────────────────┐
+│  JpaProvider        Hibernate   │   EclipseLink   │   Standard              │
+│                     supportsDerivedTable() · supportsRightJoin() · …        │
+└──────────────────────────────────┬──────────────────────────────────────────┘
+                                   │
+┌──────────────────────────────────▼──────────────────────────────────────────┐
+│  JAKARTA PERSISTENCE   CriteriaBuilder · CriteriaQuery · Root · Predicate    │
+└──────────────────────────────────┬──────────────────────────────────────────┘
+                                   │
+┌──────────────────────────────────▼──────────────────────────────────────────┐
+│  DATABASE    H2 · PostgreSQL · MySQL · SQL Server · SQLite · Oracle         │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+Three mechanics are worth knowing. Nothing here needs configuring.
+
+| Mechanic | In one line |
+| --- | --- |
+| **Alias resolution** | A lambda names an *entity*, not a table; the alias is looked up in the statement being built, never outside it — so an outer query and its subquery keep their tables apart |
+| **Two statements, one definition** | `JpaPageResultSet` holds the listing query and derives the counting query from it, so they cannot drift |
+| **Providers are asked, not assumed** | Every optional feature is a `boolean` on `JpaProvider`, readable at runtime |
+
+**Why a pagination is two statements:**
+
+```
+      customPage().join(...).filter(...).groupBy(...).select(...)
+                              one definition
+                                    │
+                 ┌──────────────────┴──────────────────┐
+                 ▼                                     ▼
+            list(10, 0)                           rowCount()
+                 │                                     │
+   select … offset ? rows                   no group by → select count(1) from (…) d
+          fetch first ? rows only              group by → select count(1) from
+                                                          ( <the groups> ) d
+```
 
 ## Requirements
 
-| | |
-| --- | --- |
-| Java | 17 or later |
-| Spring Boot | 4.0 or later (`2.0.x`); 3.1 to 3.5 takes the `1.0.x` line |
-| Jakarta Persistence | 3.2 (`2.0.x`); 3.1 on the `1.0.x` line |
-| Build | Maven 3.9 or later, or the bundled `./mvnw` |
+| | Minimum | Notes |
+| --- | --- | --- |
+| Java | 17 | |
+| Spring Boot | 4.0 | 3.1 – 3.5 takes the `1.0.x` line |
+| Jakarta Persistence | 3.2 | 3.1 on the `1.0.x` line |
+| Build | Maven 3.9 | or the bundled `./mvnw` |
+| JPA provider | Hibernate 7.4 | or EclipseLink 5.0.1, or any Criteria API implementation |
 
-**The version line follows the Spring Boot line**, and the two are maintained apart — they are not
-one jar built twice:
+**The version line follows the Spring Boot line.** The two are maintained apart — not one jar built
+twice:
 
-| Your Spring Boot | The version to use |
-| --- | --- |
-| 4.0 and later | `2.0.x` |
-| 3.1 to 3.5 | `1.0.x` |
-| 3.0 and earlier | not supported |
+| Your Spring Boot | Use | Jakarta Persistence | EclipseLink |
+| --- | --- | --- | --- |
+| 4.0 and later | **`2.0.x`, this one** | 3.2 | 5.0+ |
+| 3.1 – 3.5 | `1.0.x` | 3.1 | 4.x |
+| 3.0 and earlier | not supported | | |
 
-## Installation
+## Quick Start
 
-The current version is **`2.0.0-SNAPSHOT`**, published to the snapshot repository of the Central
-Portal. Maven reads that repository from no project that has not named it, so both blocks are
-needed:
+### Installation
+
+The current version is **`2.0.0-SNAPSHOT`**, in the Central Portal snapshot repository. Maven reads
+that repository from no project that has not named it, so both blocks are needed:
 
 ```xml
 <dependency>
@@ -85,9 +143,7 @@ needed:
     <artifactId>easyjpa-spring-boot-starter</artifactId>
     <version>2.0.0-SNAPSHOT</version>
 </dependency>
-```
 
-```xml
 <repositories>
     <repository>
         <id>central-portal-snapshots</id>
@@ -98,12 +154,9 @@ needed:
 </repositories>
 ```
 
-On Spring Boot 3, take `1.0.0-SNAPSHOT` from the same repository. Once `2.0.0` is cut it lands on
-Maven Central proper and the `<repositories>` block is no longer needed.
+### Three steps
 
-## Quick Start
-
-**1. Point Spring Data at EasyJPA's repository implementation.**
+**1 — name the provider** on `@EnableJpaRepositories`:
 
 ```java
 @EntityScan(basePackages = {"com.example.entity"})
@@ -114,46 +167,426 @@ public class JpaConfig {
 }
 ```
 
-The factory bean you name is the provider the whole library talks to:
-
-| Factory bean | Provider |
-| --- | --- |
-| `HibernateEntityDaoFactoryBean` | Hibernate, the one Spring Boot brings along |
-| `EclipseLinkEntityDaoFactoryBean` | EclipseLink |
-| `StandardEntityDaoFactoryBean` | the Criteria API alone, whatever runs underneath |
-
-**2. Let every DAO extend `EntityDao`.**
+**2 — extend `EntityDao`** instead of `JpaRepository`:
 
 ```java
 public interface UserDao extends EntityDao<User, Long> {
 }
 ```
 
-`EntityDao` **is** a `JpaRepository` — `save`, `findById`, `deleteAll` and the rest are untouched.
+`EntityDao` **is** a `JpaRepositoryImplementation` — `save`, `findById`, `deleteAll` are all still
+there, plus `count(Filter)`, `exists(Filter)`, `max/min/avg/sum(...)`.
 
-**3. Query.**
+**3 — query.**
 
 ```java
-@Autowired
-private UserDao userDao;
-
-List<User> vips = userDao.query()
-        .filter(Restrictions.eq(User::getVip, true))
+List<User> users = userDao.query()
+        .filter(Restrictions.eq(User::getVip, true)
+                .or(new FilterList().in(User::getUsername, List.of("Scott", "Lee"))
+                        .and().notNull(User::getEmail)))
         .sort(JpaSort.asc(User::getUsername))
-        .selectThis()
+        .selectThis().list();
+```
+
+**Output** — one statement, no `Predicate[]` in sight:
+
+```sql
+select u1_0.id, u1_0.email, u1_0.password, u1_0.username, u1_0.vip
+from example_user u1_0
+where u1_0.vip = ? or u1_0.username in (?, ?) and u1_0.email is not null
+order by u1_0.username
+```
+
+## Examples
+
+Every SQL block below is what Hibernate actually emitted for the Java above it, captured from the
+test suite against H2. The model:
+
+```
+User ──< Order ──< OrderProduct >── Product        User.vip, Order.status, Order.totalPrice
+                                        │          Product.name/price/location
+                                      Stock        Stock.amount
+```
+
+### Entry points
+
+| You want | Call | You get |
+| --- | --- | --- |
+| The entities | `dao.query()` | the entity type |
+| Columns mapped to a VO | `dao.query(Vo.class)` | the given type |
+| Any columns | `dao.customQuery()` | `Tuple` |
+| …with a total count | `dao.page()` · `dao.page(Vo.class)` · `dao.customPage()` | `JpaPageResultSet` |
+| An update / delete | `dao.update()` · `dao.delete()` | affected rows |
+| Native SQL | `dao.query(sql, args)` · `dao.queryForMap(sql, args)` | `PageableQuery` |
+
+### 1 · Filtering
+
+**Goal** — count by a flag, by nullability, by a set; negate any of them.
+
+```java
+userDao.count(Restrictions.eq(User::getVip, true));
+userDao.count(Restrictions.ne(User::getVip, true));
+userDao.count(Restrictions.isNull(User::getEmail));
+userDao.count(Restrictions.in(User::getUsername, List.of("Jack", "Petter")).not());
+```
+
+```sql
+select count(u1_0.id) from example_user u1_0 where u1_0.vip = ?
+select count(u1_0.id) from example_user u1_0 where u1_0.vip <> ?
+```
+
+An attribute is addressed three ways, all equivalent:
+
+```java
+Restrictions.eq(Product::getName, "Juicer")   // by lambda — the alias is resolved for you
+Restrictions.eq("name", "Juicer")             // by attribute name, on the root entity
+Restrictions.eq("p", "name", "Juicer")        // by alias + attribute name
+```
+
+### 2 · Joining
+
+**Goal** — order lines with their order, customer and product: four tables, two branches.
+
+```java
+orderProductDao.customPage()
+        .join(OrderProduct::getOrder, "o", null)      // OrderProduct → Order
+        .join(Order::getUser, "u", null)              // Order        → User
+        .join(OrderProduct::getProduct, "p", null)    // OrderProduct → Product, second branch
+        .filter(new FilterList().notNull(Product::getDiscount).and()
+                .in(Property.forName("o", "status"), List.of(OrderStatus.PAID, OrderStatus.SHIPPED)))
+        .sort(JpaSort.desc(Order::getOrderDate), JpaSort.asc(Product::getName))
+        .select(new ColumnList().addColumns(User::getUsername)
+                .addColumns(Order::getId, Order::getOrderDate, Order::getStatus)
+                .addColumns(Product::getName, Product::getPrice)
+                .addColumns(OrderProduct::getAmount)
+                .addColumns(Fields.multiply(Property.forName(Product::getPrice),
+                        Property.forName(OrderProduct::getAmount)).as("subtotal")));
+```
+
+```sql
+select u1_0.username, o1_0.id, o1_0.order_date, o1_0.status,
+       p1_0.name, p1_0.price, op1_0.amount, (p1_0.price * op1_0.amount)
+from example_order_product op1_0
+join example_order   o1_0 on o1_0.id = op1_0.order_id
+join example_user    u1_0 on u1_0.id = o1_0.user_id
+join example_product p1_0 on p1_0.id = op1_0.product_id
+where p1_0.discount is not null and o1_0.status in (?, ?)
+order by o1_0.order_date desc, p1_0.name
+offset ? rows fetch first ? rows only
+```
+
+Note the third join branches back off `OrderProduct` rather than continuing from `User` — the lambda
+carries its own entity, so the tree comes out the way it reads.
+
+| Join | Call |
+| --- | --- |
+| Inner | `join(OrderProduct::getProduct, "p", null)` |
+| Left / Right | `leftJoin(...)` · `rightJoin(...)` |
+| Cross, no association | `crossJoin(Stock.class, "s")` then correlate in `filter(...)` |
+| With an `on` condition | `leftJoin(Order::getOrderProducts, "op", Restrictions.gt("op", "amount", 10))` |
+| By attribute name | `join("o", "user", "u", null)` |
+
+### 3 · Grouping and aggregation
+
+**Goal** — per user: how many orders, how much in total, the biggest one. Keep users with no order.
+
+```java
+List<UserOrderVo> dataList = userDao.customQuery()
+        .leftJoin(User::getOrders, "o", null)
+        .groupBy(new FieldList(User::getUsername))
+        .sort(JpaSort.asc(User::getUsername))
+        .select(new ColumnList().addColumns(User::getUsername)
+                .addColumns(Fields.count(Order::getId).as("orderAmount"),
+                            Fields.sum(Order::getTotalPrice).as("totalPrice"),
+                            Fields.max(Order::getTotalPrice).as("maxPrice")))
+        .setTransformer(Transformers.asBean(UserOrderVo.class))
         .list();
 ```
 
-Nothing else has to be configured. On EclipseLink, add the dependency and build the entity manager
-yourself, since Spring Boot autoconfigures Hibernate alone:
-
-```xml
-<dependency>
-    <groupId>org.eclipse.persistence</groupId>
-    <artifactId>org.eclipse.persistence.jpa</artifactId>
-    <version>5.0.1</version>
-</dependency>
+```sql
+select u1_0.username, count(o1_0.id), sum(o1_0.total_price), max(o1_0.total_price)
+from example_user u1_0
+left join example_order o1_0 on u1_0.id = o1_0.user_id
+group by u1_0.username
+order by u1_0.username
 ```
+
+The alias you give a computed column (`.as("orderAmount")`) is the VO property — or the map key —
+it lands in. `having` filters the groups: `.having(Restrictions.gt(Fields.count(Order::getId), 0L))`.
+
+### 4 · Computed columns
+
+```java
+Fields.multiply(Property.forName(Product::getPrice), Property.forName(OrderProduct::getAmount))
+Fields.concat(Fields.upper(User::getUsername), "!")
+Fields.countDistinct(Property.forName("this", "order.id"))
+Fields.month(Order::getOrderDate)                      // rendered per database
+Function.build("LOWER", String.class, Product::getName) // any function the database has
+```
+
+**Goal** — map a column to a category: `CASE WHEN`.
+
+```java
+IfExpression<String, String> area = new IfExpression<String, String>(Product::getLocation)
+        .when("China", "Asia").when("Japan", "Asia")
+        .when("Australia", "Oceania")
+        .otherwise("Other");
+
+productDao.customQuery()
+        .select(new ColumnList().addColumns(area.as("area")).addColumns(Product::getLocation))
+        .list();
+```
+
+```sql
+select case p1_0.location when ? then cast(? as varchar)
+                          when ? then cast(? as varchar)
+                          when ? then cast(? as varchar)
+                          else cast(? as varchar) end,
+       p1_0.location
+from example_product p1_0
+```
+
+### 5 · Pagination, counted correctly
+
+**Goal** — best sellers: per product, units sold, distinct orders, turnover. Keep products sold more
+than once, heaviest first, and page through them.
+
+```java
+JpaPageResultSet<Tuple> resultSet = orderProductDao.customPage()
+        .join(OrderProduct::getProduct, "p", null)
+        .groupBy(new FieldList().addFields(Product::getName))
+        .having(Restrictions.gt(Fields.count(OrderProduct::getId), 1L))
+        .sort(JpaSort.desc(2))
+        .select(new ColumnList().addColumns(Product::getName)
+                .addColumns(Fields.sum(OrderProduct::getAmount).as("soldAmount"),
+                        Fields.countDistinct(Property.forName("this", "order.id")).as("orderAmount"),
+                        Fields.sum(Fields.multiply(Property.forName(Product::getPrice),
+                                Property.forName(OrderProduct::getAmount))).as("turnover")));
+
+long groups = resultSet.rowCount();                  // ← counts products, not order lines
+List<SalesVo> rows = resultSet.setTransformer(Transformers.asBean(SalesVo.class)).list();
+```
+
+**Output — the listing query:**
+
+```sql
+select p1_0.name, sum(op1_0.amount), count(distinct op1_0.order_id),
+       sum((p1_0.price * op1_0.amount))
+from example_order_product op1_0
+join example_product p1_0 on p1_0.id = op1_0.product_id
+group by p1_0.name having count(op1_0.id) > ?
+order by 2 desc
+offset ? rows
+```
+
+**Output — the counting query, derived from the same definition:**
+
+```sql
+select count(1) from (
+    select 1 from example_order_product op1_0
+    join example_product p1_0 on p1_0.id = op1_0.product_id
+    group by p1_0.name having count(op1_0.id) > ?
+) derived1_0(c)
+```
+
+One statement, `having` honoured, no groups fetched. Page navigation:
+
+```java
+PageResponse<Map<String, Object>> page = userDao.customPage()
+        .sort(JpaSort.asc(User::getId))
+        .select(new ColumnList(User::getId, User::getUsername, User::getVip))
+        .setTransformer(Transformers.asCaseInsensitiveMap())
+        .paginate(PageRequest.of(2));
+
+page.getTotalRecords();   page.getTotalPages();   page.hasNextPage();
+page.nextPage().getContent();   page.lastPage().isLastPage();
+
+resultSet.paginate(PageRequest.of(10))
+         .forEachPage(eachPage -> eachPage.getContent().forEach(this::handle));
+```
+
+```sql
+select u1_0.id, u1_0.username, u1_0.vip from example_user u1_0
+order by u1_0.id offset ? rows fetch first ? rows only
+```
+
+### 6 · Subqueries
+
+Build the subquery **from the statement that uses it** — that is what correlates the two.
+
+**Goal** — the users who have ever ordered.
+
+```java
+JpaQuery<User, User> query = userDao.query();
+JpaSubQuery<Order, Long> subQuery = query.subQuery(Order.class, "o", Long.class)
+        .filter(Restrictions.eq(Order::getUser, User::getId))
+        .select(Order::getId);
+
+List<User> customers = query.filter(Restrictions.exists(subQuery)).selectThis().list();
+```
+
+```sql
+select u1_0.id, u1_0.email, u1_0.password, u1_0.username, u1_0.vip
+from example_user u1_0
+where exists (select o1_0.id from example_order o1_0 where o1_0.user_id = u1_0.id)
+```
+
+| Shape | How |
+| --- | --- |
+| `not exists` | `Restrictions.exists(subQuery).not()` |
+| `in` | `Restrictions.in(Property.forName(User::getId), subQuery)` |
+| A grouping subquery | `subQuery.groupBy(...).having(...).select(Property.forName("o", "user.id", Long.class))` |
+| As a selected column | `Column.forSubQuery(stock, "stockAmount")` |
+| Compared against | `Restrictions.gt(Property.forName(Product::getPrice), subQuery)` |
+| Nested in another subquery | create both from the same outer query |
+
+Whatever a subquery selects out of an association, spell the key out —
+`Property.forName("o", "user.id", Long.class)` rather than `Order::getUser` — since that is what
+every provider renders the same way.
+
+### 7 · Joining a derived table
+
+**Goal** — every product with its sales, without a correlated subquery per row.
+
+```java
+JpaQuery<Product, Tuple> query = productDao.customQuery();
+JpaSubQuery<OrderProduct, Tuple> sales = query.subQuery(OrderProduct.class, "op", Tuple.class);
+sales.groupBy(new FieldList().addFields(Property.forName("op", "product.id")))
+     .select(new ColumnList()
+             .addColumns(Property.forName("op", "product.id").as("productId"))
+             .addColumns(Fields.sum("op", "amount", Integer.class).as("soldAmount"),
+                         Fields.count("op", "id").as("orderAmount")));
+
+query.joinSubQuery(sales, "s", Restrictions.eq(Property.forName("s", "productId"),
+                                               Property.forName("this", "id")))
+     .sort(JpaSort.desc(Property.forName("s", "soldAmount")))
+     .select(new ColumnList().addColumns(Product::getName, Product::getPrice)
+             .addColumns(Property.forName("s", "soldAmount").as("soldAmount"),
+                         Property.forName("s", "orderAmount").as("orderAmount")))
+     .setTransformer(Transformers.asCaseInsensitiveMap()).list();
+```
+
+```sql
+select p1_0.name, p1_0.price, s1_0.soldAmount, s1_0.orderAmount
+from example_product p1_0
+join (select op1_0.product_id c0, sum(op1_0.amount) c1, count(op1_0.id) c2
+      from example_order_product op1_0
+      group by c0) s1_0(productId, soldAmount, orderAmount)
+  on s1_0.productId = p1_0.id
+order by 3 desc
+```
+
+### 8 · Update and delete
+
+```java
+userDao.update().set(User::getVip, true)
+       .filter(Restrictions.eq(User::getVip, false)).execute();
+
+userDao.update().setField(User::getUsername, Fields.concat(Fields.upper(User::getUsername), "!"))
+       .filter(Restrictions.eq(User::getUsername, "Lee")).execute();
+
+stockDao.update().setField(Stock::getAmount, Fields.minusValue(Stock::getAmount, 1L))
+        .filter(Restrictions.gt(Stock::getAmount, 0L)).execute();
+```
+
+```sql
+update example_user  u1_0 set vip = ?                              where u1_0.vip = ?
+update example_user  u1_0 set username = (upper(u1_0.username)||?) where u1_0.username = ?
+update example_stock s1_0 set amount = (s1_0.amount - cast(? as bigint)) where s1_0.amount > ?
+```
+
+| Setter | Meaning |
+| --- | --- |
+| `set(attr, value)` | up to three attribute/value pairs in one call |
+| `set("name", value)` | by attribute name |
+| `setProperty("email", "username")` | copy one column into another |
+| `setField(attr, Fields…)` | assign an expression |
+
+A delete correlates subqueries the same way:
+
+```java
+JpaDelete<User> delete = userDao.delete();
+JpaSubQuery<Order, Order> subQuery = delete.subQuery(Order.class)
+        .filter(Restrictions.eq(Order::getUser, User::getId));
+
+int rows = delete.filter(Restrictions.exists(subQuery).not()).execute();
+```
+
+```sql
+delete from example_user u1_0
+where not exists (select o1_0.id from example_order o1_0 where o1_0.user_id = u1_0.id)
+```
+
+### 9 · Fetch joins
+
+**Goal** — read `order.getUser()` afterwards without one extra select per order.
+
+```java
+orderDao.query().fetch(Order::getUser)
+        .filter(Restrictions.ne(Order::getStatus, OrderStatus.CANCELLED))
+        .selectThis().list();
+```
+
+```sql
+select o1_0.id, o1_0.order_date, o1_0.status, o1_0.total_price, o1_0.user_id,
+       u1_0.id, u1_0.email, u1_0.password, u1_0.username, u1_0.vip
+from example_order o1_0
+join example_user u1_0 on u1_0.id = o1_0.user_id
+where o1_0.status <> ?
+```
+
+| Case | Call | Caveat |
+| --- | --- | --- |
+| To-one | `fetch(Order::getUser)` | — |
+| Collection | `leftFetch(User::getOrders).distinct()` | an inner join would drop the empty ones |
+| Upon a join | `join(OrderProduct::getOrder, "o", null).fetch("o", "user")` | the entity owning it must be the one selected |
+| With pagination | `page().fetch(Order::getUser)` | to-one only; a fetched collection paginates in memory |
+
+### 10 · Transformers and native SQL
+
+```java
+.setTransformer(Transformers.asMap())                   // Map<String, Object>
+.setTransformer(Transformers.asCaseInsensitiveMap())    // keys case-insensitive
+.setTransformer(Transformers.asList())                  // List<Object>
+.setTransformer(Transformers.asBean(SalesVo.class))     // VO, matched by column alias
+.setTransformer(Transformers.noop())                    // as it is
+```
+
+```java
+List<Map<String, Object>> dataList = userDao.queryForMap(
+        "select u.username as username, count(o.id) as order_amount"
+                + " from example_user u left join example_order o on o.user_id = u.id"
+                + " group by u.username order by u.username",
+        new Object[0]).list();
+```
+
+| Native call | Returns |
+| --- | --- |
+| `query(sql, args)` | `PageableQuery<E>` |
+| `query(sql, args, Vo.class)` | `PageableQuery<Vo>` |
+| `query(sql, args, rowMapper)` | `PageableQuery<T>` |
+| `queryForMap(sql, args)` | `PageableQuery<Map<String,Object>>`, keys case-insensitive |
+| `getSingleResult(sql, args, type)` | one scalar |
+| `executeUpdate(sql, args)` | affected rows |
+
+All of them keep `rowCount()` and `paginate(...)`.
+
+## Configuration
+
+EasyJPA itself has **no properties to set** — no `spring.easyjpa.*` namespace, nothing to tune. What
+you do configure is the provider and, for three databases, the driver.
+
+| What | Where | Value | Why |
+| --- | --- | --- | --- |
+| Provider | `@EnableJpaRepositories(repositoryFactoryBeanClass = …)` | `HibernateEntityDaoFactoryBean` | the default; every feature built for it |
+| | | `EclipseLinkEntityDaoFactoryBean` | EclipseLink |
+| | | `StandardEntityDaoFactoryBean` | the Criteria API alone |
+| EclipseLink | `spring.autoconfigure.exclude` | `…orm.jpa.HibernateJpaAutoConfiguration` | Spring Boot autoconfigures Hibernate alone |
+| SQL Server | JDBC url | `calcBigDecimalPrecision=true` | otherwise every `BigDecimal` binds as `decimal(38,0)` and `coalesce` drops the decimals — `0.90` reads back as `1` |
+| SQLite | entity id mapping | `GenerationType.IDENTITY` | `AUTO` falls back to a sequence table that Hibernate writes from its own transaction, which SQLite locks against |
+| Oracle 23+ on Hibernate | `OracleDialect` subclass | `DatabaseVersion.make(21)` | works around a wrong `group by` alias — see [Compatibility](#compatibility--comparison) |
+
+On EclipseLink you also build the entity manager yourself:
 
 ```java
 @Bean
@@ -166,409 +599,110 @@ public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource da
 }
 ```
 
-```properties
-spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+```xml
+<dependency>
+    <groupId>org.eclipse.persistence</groupId>
+    <artifactId>org.eclipse.persistence.jpa</artifactId>
+    <version>5.0.1</version>
+</dependency>
 ```
 
-## Usage
+## Compatibility & Comparison
 
-The examples below use a small e-commerce model — the same one the test suite runs against:
+### Providers
 
-```
-User ──< Order ──< OrderProduct >── Product
-                                        │
-                                      Stock
-```
+Hibernate is the default and reaches every feature. A `no` below is a limit of the provider, not of
+EasyJPA — and each one is a `boolean` on `JpaProvider`, so you can ask before you build.
 
-### Pick an entry point
-
-| What you need | Entry point | What it returns |
-| --- | --- | --- |
-| The entities themselves | `dao.query()` | the entity type |
-| Some columns mapped to a VO | `dao.query(Vo.class)` | the given type |
-| Any columns, whatever they are | `dao.customQuery()` | a `Tuple` |
-| The same, with a total count | `dao.page()` / `dao.page(Vo.class)` / `dao.customPage()` | a `JpaPageResultSet` |
-| An update or a delete | `dao.update()` / `dao.delete()` | the affected rows |
-| Something the Criteria API misses | `dao.queryForMap(sql, args)` and its friends | a `PageableQuery` |
-
-### Filtering
-
-`Restrictions` builds one condition, `FilterList` chains several, and `.not()` negates.
-
-```java
-userDao.count(Restrictions.eq(User::getVip, true));
-userDao.count(Restrictions.isNull(User::getEmail));
-userDao.count(Restrictions.in(User::getUsername, List.of("Jack", "Petter")));
-userDao.count(Restrictions.in(User::getUsername, usernames).not());
-```
-
-Conditions nest — `vip or (username in ('Scott','Lee') and email is not null)`:
-
-```java
-List<User> users = userDao.query()
-        .filter(Restrictions.eq(User::getVip, true)
-                .or(new FilterList().in(User::getUsername, List.of("Scott", "Lee"))
-                        .and().notNull(User::getEmail)))
-        .sort(JpaSort.asc(User::getUsername))
-        .selectThis().list();
-```
-
-An attribute can be addressed three ways, all equivalent:
-
-```java
-Restrictions.eq(Product::getName, "Juicer")   // by a lambda, the alias is resolved for you
-Restrictions.eq("name", "Juicer")             // by an attribute name, on the root entity
-Restrictions.eq("p", "name", "Juicer")        // by an alias and an attribute name
-```
-
-### Joining
-
-Join by a lambda and give every join an alias. The lambda carries the entity it belongs to, so a
-join always grows from that entity — however many branches you need:
-
-```java
-orderProductDao.customPage()
-        .join(OrderProduct::getOrder, "o", null)      // OrderProduct -> Order
-        .join(Order::getUser, "u", null)              // Order        -> User
-        .join(OrderProduct::getProduct, "p", null)    // OrderProduct -> Product, a second branch
-```
-
-```sql
-from example_order_product op1_0
-join example_order o1_0 on o1_0.id = op1_0.order_id
-join example_user u1_0 on u1_0.id = o1_0.user_id
-join example_product p1_0 on p1_0.id = op1_0.product_id
-```
-
-`leftJoin`, `rightJoin` and `crossJoin` work the same. An `on` condition is the third argument:
-
-```java
-orderDao.customQuery().leftJoin(Order::getOrderProducts, "op",
-                                Restrictions.gt("op", "amount", 10))
-```
-
-Two tables with no association at all are still joined by a cross join and correlated in the where
-clause:
-
-```java
-productDao.customPage().crossJoin(Stock.class, "s")
-          .filter(new FilterList().eq(Stock::getProductId, Product::getId))
-```
-
-### Grouping and aggregation
-
-```java
-List<UserOrderVo> dataList = userDao.customQuery()
-        .leftJoin(User::getOrders, "o", null)
-        .groupBy(new FieldList(User::getUsername))
-        .having(Restrictions.gt(Fields.count(Order::getId), 0L))
-        .sort(JpaSort.asc(User::getUsername))
-        .select(new ColumnList().addColumns(User::getUsername)
-                .addColumns(Fields.count(Order::getId).as("orderAmount"),
-                            Fields.sum(Order::getTotalPrice).as("totalPrice"),
-                            Fields.max(Order::getTotalPrice).as("maxPrice")))
-        .setTransformer(Transformers.asBean(UserOrderVo.class))
-        .list();
-```
-
-Give every computed column an alias — that alias is the VO property or the map key it lands in.
-
-### Computed columns
-
-```java
-Fields.multiply(Property.forName(Product::getPrice),
-                Property.forName(OrderProduct::getAmount)).as("subtotal")
-
-Fields.concat(Fields.upper(User::getUsername), "!")
-Fields.countDistinct(Property.forName("this", "order.id")).as("orderAmount")
-Fields.month(Order::getOrderDate).as("month")     // rendered per database
-```
-
-`IfExpression` is `CASE WHEN`:
-
-```java
-IfExpression<String, String> area = new IfExpression<String, String>("location")
-        .when("China", "Asia").otherwise("Other");
-
-productDao.customQuery().select(new ColumnList().addColumns(area.as("area"))).list();
-```
-
-### Pagination
-
-A pagination is a listing query **plus** a counting query, so build it once and take both:
-
-```java
-JpaPageResultSet<Tuple> resultSet = orderDao.customPage()
-        .join(Order::getUser, "u", null)
-        .filter(Restrictions.gt(Order::getTotalPrice, BigDecimal.valueOf(1000)))
-        .select(new ColumnList().addColumns(Order::getId).addColumns(User::getUsername));
-
-long total = resultSet.rowCount();          // one statement, no rows fetched
-List<Tuple> rows = resultSet.list(10, 0);   // the first 10 rows
-```
-
-When the query groups, `rowCount()` counts the **groups**, `having` included, in one statement:
-
-```java
-JpaPageResultSet<Tuple> resultSet = orderProductDao.customPage()
-        .join(OrderProduct::getProduct, "p", null)
-        .groupBy(new FieldList().addFields(Product::getName))
-        .having(Restrictions.gt(Fields.count(OrderProduct::getId), 1L))
-        .select(new ColumnList().addColumns(Product::getName)
-                .addColumns(Fields.sum(OrderProduct::getAmount).as("soldAmount")));
-
-resultSet.rowCount();   // the number of products, not the number of order lines
-```
-
-Page navigation:
-
-```java
-PageResponse<Map<String, Object>> page = userDao.customPage()
-        .sort(JpaSort.asc(User::getId))
-        .select(new ColumnList(User::getId, User::getUsername, User::getVip))
-        .setTransformer(Transformers.asCaseInsensitiveMap())
-        .paginate(PageRequest.of(2));
-
-page.getTotalRecords();
-page.getTotalPages();
-page.hasNextPage();
-page.nextPage().getContent();
-page.lastPage().isLastPage();
-
-resultSet.paginate(PageRequest.of(10))
-         .forEachPage(eachPage -> eachPage.getContent().forEach(this::handle));
-```
-
-### Subqueries
-
-Build the subquery **from the statement that uses it** — that is what correlates the two.
-
-```java
-// exists: the users who have ever ordered
-JpaQuery<User, User> query = userDao.query();
-JpaSubQuery<Order, Long> subQuery = query.subQuery(Order.class, "o", Long.class)
-        .filter(Restrictions.eq(Order::getUser, User::getId))
-        .select(Order::getId);
-
-List<User> customers = query.filter(Restrictions.exists(subQuery)).selectThis().list();
-
-// not exists: negate it
-query.filter(Restrictions.exists(subQuery).not()).selectThis().list();
-```
-
-A subquery may group, join and distinct just as an ordinary query does:
-
-```java
-// in: the repeat customers
-JpaSubQuery<Order, Long> repeat = query.subQuery(Order.class, "o", Long.class);
-repeat.groupBy(new FieldList().addFields(Order::getUser))
-      .having(Restrictions.gt(Fields.count(Order::getId), 1L))
-      .select(Property.forName("o", "user.id", Long.class));
-
-query.filter(Restrictions.in(Property.forName(User::getId), repeat)).selectThis().list();
-```
-
-It can also be a selected column:
-
-```java
-JpaQuery<Product, Tuple> query = productDao.customQuery();
-JpaSubQuery<Stock, Long> stock = query.subQuery(Stock.class, "s", Long.class)
-        .filter(Restrictions.eq(Stock::getProductId, Product::getId))
-        .select(Fields.max(Stock::getAmount));
-
-query.select(new ColumnList().addColumns(Product::getName)
-                .addColumns(Column.forSubQuery(stock, "stockAmount")))
-     .list();
-```
-
-Whatever a subquery selects out of an association, spell the key out — `Property.forName("o",
-"user.id", Long.class)` rather than `Order::getUser` — since that is what every provider renders
-the same way.
-
-### Joining a derived table
-
-When every row needs an aggregate of another table, join that aggregate once instead of running a
-correlated subquery per row:
-
-```java
-JpaQuery<Product, Tuple> query = productDao.customQuery();
-JpaSubQuery<OrderProduct, Tuple> sales = query.subQuery(OrderProduct.class, "op", Tuple.class);
-sales.groupBy(new FieldList().addFields(Property.forName("op", "product.id")))
-     .select(new ColumnList()
-             .addColumns(Property.forName("op", "product.id").as("productId"))
-             .addColumns(Fields.sum("op", "amount", Integer.class).as("soldAmount")));
-
-query.joinSubQuery(sales, "s", Restrictions.eq(Property.forName("s", "productId"),
-                                               Property.forName("this", "id")))
-     .sort(JpaSort.desc(Property.forName("s", "soldAmount")))
-     .select(new ColumnList().addColumns(Product::getName)
-             .addColumns(Property.forName("s", "soldAmount").as("soldAmount")))
-     .setTransformer(Transformers.asCaseInsensitiveMap())
-     .list();
-```
-
-### Update and delete
-
-```java
-userDao.update().set(User::getVip, true)
-       .filter(Restrictions.eq(User::getVip, false)).execute();
-
-userDao.update().set(User::getPassword, "654321", User::getEmail, "nobody@jpatest.com")
-       .filter(Restrictions.eq(User::getUsername, "Jack")).execute();
-
-userDao.update().setProperty("email", "username")            // email = username
-       .filter(Restrictions.eq(User::getUsername, "Terry")).execute();
-
-stockDao.update().setField(Stock::getAmount, Fields.minusValue(Stock::getAmount, 1L))
-        .filter(Restrictions.gt(Stock::getAmount, 0L)).execute();
-```
-
-A delete correlates subqueries just as a query does:
-
-```java
-JpaDelete<User> delete = userDao.delete();
-JpaSubQuery<Order, Order> subQuery = delete.subQuery(Order.class)
-        .filter(Restrictions.eq(Order::getUser, User::getId));
-
-int rows = delete.filter(Restrictions.exists(subQuery).not()).execute();
-```
-
-### Fetch joins
-
-An association read after the query costs one statement per entity. Fetch it along instead:
-
-```java
-orderDao.query().fetch(Order::getUser).selectThis().list();                  // to-one
-userDao.query().leftFetch(User::getOrders).distinct().selectThis().list();   // collection
-```
-
-The entity owning the association has to be the one selected. A pagination fetches on the query it
-lists and never on the one it counts, so keep paginated fetches to the to-one associations — a
-fetched collection is paginated in memory.
-
-### Result transformers
-
-```java
-.setTransformer(Transformers.asMap())                   // Map<String, Object>
-.setTransformer(Transformers.asCaseInsensitiveMap())    // the keys are case insensitive
-.setTransformer(Transformers.asList())                  // List<Object>
-.setTransformer(Transformers.asBean(SalesVo.class))     // a VO, matched by the column aliases
-.setTransformer(Transformers.noop())                    // keep it as it is
-```
-
-### Native SQL
-
-Whatever the Criteria API does not reach is one call away, and the result is mapped case
-insensitively, so the column labels may be cased however the database likes:
-
-```java
-List<Map<String, Object>> dataList = userDao.queryForMap(
-        "select u.username as username, count(o.id) as order_amount"
-                + " from example_user u left join example_order o on o.user_id = u.id"
-                + " group by u.username order by u.username",
-        new Object[0]).list();
-```
-
-It returns a `PageableQuery`, so `rowCount()` and `paginate(...)` work exactly as above.
-
-## How It Works
-
-Three things are worth knowing about, and none of them needs any configuration.
-
-**Aliases resolve within one statement.** An alias is what tells EasyJPA which table an attribute
-belongs to. A lambda names no table — it names the *entity* the attribute belongs to, and EasyJPA
-looks the alias up in the statement being built, taking the nearest table of that entity. The
-lookup never leaves the statement, which is why an outer query and its subquery tell their tables
-apart even when both query the same entity. The root entity is always aliased `this`, and a blank
-alias means the same. When one entity is joined twice, as in a self join, name the tables apart and
-address them by `Property.forName("o2", ...)`.
-
-**A pagination is two statements built from one definition.** `JpaPageResultSet` holds the listing
-query and derives the counting query from it, so the two can never drift apart. When the query
-groups, the counting query wraps it as a derived table and counts the groups — one statement no
-matter how many groups there are, and a `having` clause counted correctly. Providers that cannot
-join a derived table fall back to `count(distinct ...)`.
-
-**Providers are asked, not assumed.** Every feature a provider may or may not reach is a method on
-`JpaProvider`, so the answer is available at runtime rather than in a stack trace:
-
-```java
-if (JpaProviders.getProvider().supportsDerivedTable()) {
-    ...
-}
-```
-
-## Provider and Database Support
-
-Hibernate is the default and the one every feature is built for. EclipseLink is supported as far as
-it goes, and what it does not reach is reported rather than silently worked around.
-
-| | Hibernate | EclipseLink |
-| --- | --- | --- |
-| Query, join, filter, sort, group, having | yes | yes |
-| Pagination and its counting | by a derived table | by a `count(distinct ...)` |
-| Counting a grouping query with having | one statement | one row per group |
-| Subquery as a filter (`in`, `exists`) | yes | yes |
-| Subquery as one side of a comparison | yes | quantify it by `Fields.all/any/some` |
-| Subquery as a selected column | yes | no |
-| Joining a subquery as a derived table | yes | no |
-| Right join | yes | no |
-| Selecting an entity column by column | yes | no, select a `Tuple` or a bean |
-| Filling a bean by its properties | yes | no, its constructor is used |
-| Sorting by a column position | yes | no |
-| A function of the database passed through | yes | no |
-| `year()`, `month()`, `day()` | yes | no, the Criteria API defines none |
-
-Every `no` above is a limit of the provider, not of EasyJPA.
-
-The suite is run against six databases. H2, PostgreSQL and MySQL take everything; these three have
-limits of their own:
-
-| | SQL Server | SQLite | Oracle |
+| | Hibernate | EclipseLink | Ask it by |
 | --- | --- | --- | --- |
-| Sorting by a column position | yes on Hibernate, no on EclipseLink | yes | yes |
-| Concatenating a numeric column | cast it to a string first | yes | yes |
-| A subquery quantified by `all` / `any` | yes | no | yes |
-| A function of the database passed through | yes | only SQLite's own | yes |
-| A date read back as a date | yes | no, SQLite keeps text | yes |
-| Joining a derived table | yes | yes | not on Hibernate against Oracle 23+ |
-| Several columns of one `Tuple`, paginated | yes | yes | not on EclipseLink |
-| EclipseLink | yes | no platform ships for it | yes, with the above |
+| Query, join, filter, sort, group, having | ✅ | ✅ | |
+| Pagination counting | derived table | `count(distinct …)` | `supportsDerivedTable()` |
+| Counting a grouping query with `having` | one statement | one row per group | `supportsDerivedTable()` |
+| Subquery as a filter (`in`, `exists`) | ✅ | ✅ | |
+| Subquery as one side of a comparison | ✅ | quantify by `Fields.all/any/some` | `supportsSubQueryAsExpression()` |
+| Subquery as a selected column | ✅ | ❌ | `supportsSubQueryAsSelection()` |
+| Join a subquery as a derived table | ✅ | ❌ | `supportsDerivedTable()` |
+| Right join | ✅ | ❌ | `supportsRightJoin()` |
+| Select an entity column by column | ✅ | ❌ — take a `Tuple` or a bean | `supportsPartialEntity()` |
+| Fill a bean by its properties | ✅ | ❌ — its constructor is used | `supportsBeanProjection()` |
+| Sort by column position | ✅ | ❌ | `supportsOrdinalSort()` |
+| Pass a database function through | ✅ | ❌ | `supportsPassThroughFunction()` |
+| `year()` · `month()` · `day()` | ✅ | ❌ — Criteria defines none | `supportsDatePart()` |
 
-Two settings are worth carrying into an application:
+### Databases
 
-- **SQL Server** — put `calcBigDecimalPrecision=true` in the JDBC url. Without it the driver binds
-  every `BigDecimal` as `decimal(38,0)`, and a `coalesce` against such a parameter drops the
-  decimals: `0.90` comes back as `1`.
-- **SQLite** — map entity ids as `IDENTITY`. `GenerationType.AUTO` falls back to a sequence table,
-  which Hibernate writes from a transaction of its own, and SQLite locks against the transaction
-  already open.
+The same 202 tests run on every provider against every database below.
 
-## Running the Tests
+| | H2 | PostgreSQL | MySQL | SQL Server | SQLite | Oracle |
+| --- | --- | --- | --- | --- | --- | --- |
+| Version tested | 2.3.232 | 16.13 | 9.6.0 | 16.00.4265 | 3.49.1 | 23.26.3 |
+| Hibernate | ✅ | ✅ | ✅ | ⚠️ 1 | ⚠️ 3 | ⚠️ 4 |
+| Criteria API alone | ✅ | ✅ | ✅ | ⚠️ 1 | ⚠️ 3 | ✅ |
+| EclipseLink | ✅ | ✅ | ✅ | ✅ | ❌ no platform | ⚠️ 2 |
 
-The tests run against H2 out of the box, and the same set of them runs on every provider and every
-database. Which one is picked is a matter of the active profile alone.
+Each ⚠️ belongs to the database or the provider on it, never to a query EasyJPA built:
+
+| Where | What | Why |
+| --- | --- | --- |
+| SQL Server | 1 concatenation of a numeric column | `+` is read by its first operand, so a `max(price)` asked for as text is taken for arithmetic — cast it first |
+| SQLite | 3 tests | no quantified subquery, no `repeat`, no date type |
+| Oracle 23+ / Hibernate | 4 derived-table tests | Hibernate 7.4 writes `group by c0` — its internal alias, not the select item's. Same tests pass when the dialect is told it is Oracle 21 |
+| Oracle / EclipseLink | 2 paginated `Tuple` tests | EclipseLink writes no aliases, then wraps as `select a.* from (…) a`; Oracle rejects two columns of the same name |
+
+### Against the alternatives
+
+Feature-level, not a benchmark — no timings are claimed here.
+
+| | EasyJPA | Criteria API | Spring Data `Specification` | QueryDSL |
+| --- | --- | --- | --- | --- |
+| Type-safe attributes | method references | metamodel or strings | metamodel or strings | generated `Q` classes |
+| Code generation step | none | none | none | annotation processor |
+| Dynamic composition | ✅ | manual `Predicate[]` | ✅ | ✅ |
+| Multi-branch joins | one call each | track `Join<?,?>` by hand | manual | ✅ |
+| Correlated subqueries | built from the outer query | manual | awkward | ✅ |
+| Grouping + `having` | ✅ | ✅ | not the design target | ✅ |
+| Pagination count over a `group by` | derived table, one statement | write it yourself | write it yourself | write it yourself |
+| Derived-table join | `joinSubQuery(...)` | manual | ❌ | limited |
+| Native SQL with pagination kept | ✅ | ❌ | ❌ | separate API |
+| Provider gaps discoverable at runtime | `JpaProvider` flags | ❌ | ❌ | ❌ |
+
+## Documentation
+
+| | |
+| --- | --- |
+| Worked examples | `src/test/java/com/github/easyjpa/test/` — 202 tests, all SQL above came from them |
+| Complex statements | `ComplexQueryTests` — best sellers, repeat customers, nested subqueries, self joins |
+| Pagination | `PaginationTests`, `UserDaoTests#testPageNavigation` |
+| Provider capabilities | `JpaProvider`, `UtilsTests` |
+| Release notes | [CHANGELOG.md](CHANGELOG.md) |
+
+### Running the tests
+
+H2 out of the box; the database and the provider are a matter of the active profile alone.
 
 ```bash
-mvn test                                                # Hibernate, H2
-mvn test -Dspring.profiles.active=postgresql            # Hibernate, PostgreSQL
-mvn test -Dspring.profiles.active=mysql                 # Hibernate, MySQL
-mvn test -Dspring.profiles.active=sqlserver             # Hibernate, SQL Server
-mvn test -Dspring.profiles.active=sqlite                # Hibernate, SQLite
-mvn test -Dspring.profiles.active=oracle                # Hibernate, Oracle
-mvn test -Dspring.profiles.active=standard              # the Criteria API alone
-mvn test -Peclipselink                                  # EclipseLink
-mvn test -Peclipselink -Dtest.profiles=eclipselink,mysql
+mvn test                                                 # Hibernate, H2
+mvn test -Dspring.profiles.active=postgresql             # also: mysql, sqlserver, sqlite, oracle
+mvn test -Dspring.profiles.active=standard               # the Criteria API alone
+mvn test -Peclipselink                                   # EclipseLink
+mvn test -Peclipselink -Dtest.profiles=eclipselink,mysql # EclipseLink + a database
 ```
 
-A skipped test is a feature the provider does not reach, listed in the tables above. Coverage lands
-in `target/site/jacoco`.
+A skipped test is a feature the provider does not reach. Coverage lands in `target/site/jacoco`.
 
-## License
+### Known limitations
 
-MIT. See [LICENSE](LICENSE).
+- **Aliases are strings.** A typo in `"op"` is a runtime error, not a compile error.
+- **Not auto-configured.** You name the factory bean yourself; there is no `@AutoConfiguration`.
+- **The Criteria API is the ceiling.** Window functions, CTEs and `UNION` need native SQL.
+- **A fetched collection paginates in memory.** Keep paginated fetches to to-one associations.
+- **No reactive support.** Blocking JDBC only.
 
-## Links
+## Contributing & License
 
-- **GitHub** — [paganini2008/easyjpa](https://github.com/paganini2008/easyjpa)
-- **Changelog** — [CHANGELOG.md](CHANGELOG.md)
+Issues and pull requests are welcome at
+[paganini2008/easyjpa](https://github.com/paganini2008/easyjpa). Run `mvn test` before opening one —
+and if the change touches a provider-specific path, run `-Peclipselink` and `-Dspring.profiles.active=standard` too.
+
+MIT — see [LICENSE](LICENSE).
