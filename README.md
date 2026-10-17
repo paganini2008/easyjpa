@@ -84,7 +84,8 @@ User user = userDao.query()
 └──────────────────────────────────┬──────────────────────────────────────────┘
                                    │
 ┌──────────────────────────────────▼──────────────────────────────────────────┐
-│  DATABASE    H2 · PostgreSQL · MySQL · SQL Server · SQLite · Oracle         │
+│  DATABASE   H2 · PostgreSQL · MySQL · MariaDB · SQL Server                  │
+│             Oracle · Db2 · SQLite                                           │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -632,23 +633,25 @@ EasyJPA — and each one is a `boolean` on `JpaProvider`, so you can ask before 
 
 ### Databases
 
-The same 202 tests run on every provider against every database below.
+The same 202 tests run on every provider against every database below — 23 combinations in all,
+since EclipseLink ships no SQLite platform.
 
-| | H2 | PostgreSQL | MySQL | SQL Server | SQLite | Oracle |
-| --- | --- | --- | --- | --- | --- | --- |
-| Version tested | 2.3.232 | 16.13 | 9.6.0 | 16.00.4265 | 3.49.1 | 23.26.3 |
-| Hibernate | ✅ | ✅ | ✅ | ⚠️ 1 | ⚠️ 3 | ⚠️ 4 |
-| Criteria API alone | ✅ | ✅ | ✅ | ⚠️ 1 | ⚠️ 3 | ✅ |
-| EclipseLink | ✅ | ✅ | ✅ | ✅ | ❌ no platform | ⚠️ 2 |
+| | H2 | PostgreSQL | MySQL | MariaDB | SQL Server | Oracle | Db2 | SQLite |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Version tested | 2.3.232 | 17.11 | 9.6.0 | 11.8.9 | 16.00.4295 | 26ai (23.26.1) | 12.1 | 3.49.1 |
+| Hibernate 6.6.53 | ✅ | ✅ | ✅ | ✅ | ⚠️ 1 | ⚠️ 4 | ✅ | ⚠️ 3 |
+| Criteria API alone | ✅ | ✅ | ✅ | ✅ | ⚠️ 1 | ✅ | ✅ | ⚠️ 3 |
+| EclipseLink 4.0.4 | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️ 2 | ✅ | ❌ no platform |
 
-Each ⚠️ belongs to the database or the provider on it, never to a query EasyJPA built:
+Five of the eight take every test on every provider. Each ⚠️ belongs to the database, to the
+provider on it, or to how the test itself is written — never to a query EasyJPA built:
 
 | Where | What | Why |
 | --- | --- | --- |
-| SQL Server | 1 concatenation of a numeric column | `+` is read by its first operand, so a `max(price)` asked for as text is taken for arithmetic — cast it first |
-| SQLite | 3 tests | no quantified subquery, no `repeat`, no date type |
-| Oracle 23+ / Hibernate | 4 derived-table tests | Hibernate writes `group by c0` — its internal alias, not the select item's. Same tests pass when the dialect is told it is Oracle 21 |
-| Oracle / EclipseLink | 2 paginated `Tuple` tests | EclipseLink writes no aliases, then wraps as `select a.* from (…) a`; Oracle rejects two columns of the same name |
+| SQL Server | 1 concatenation of a numeric column | `+` is read by its first operand, so a `max(price)` asked for as text is taken for arithmetic — cast it first. The test asks for it as text; nothing in the library does |
+| Oracle 23+ / Hibernate | 4 derived-table tests | Hibernate writes `group by c0` — its own internal alias rather than the select item's — so Oracle answers `ORA-00904`. Both Hibernate 6.6 and 7.4 do it, so it is not a regression of either; the trigger is Oracle 23, from which a `group by` may name a select item by its alias. The same tests pass when the dialect is told it is Oracle 21 |
+| Oracle / EclipseLink | 2 tests selecting one expression twice | EclipseLink writes no column aliases, then paginates by wrapping as `select a.* from (…) a`; Oracle answers `ORA-00918` because the inner query has two columns of the same name |
+| SQLite | 3 tests | no quantified subquery, no `repeat`, no date type of its own |
 
 ### Against the alternatives
 
@@ -683,7 +686,7 @@ H2 out of the box; the database and the provider are a matter of the active prof
 
 ```bash
 mvn test                                                 # Hibernate, H2
-mvn test -Dspring.profiles.active=postgresql             # also: mysql, sqlserver, sqlite, oracle
+mvn test -Dspring.profiles.active=postgresql             # also: mysql, mariadb, sqlserver, oracle, db2, sqlite
 mvn test -Dspring.profiles.active=standard               # the Criteria API alone
 mvn test -Peclipselink                                   # EclipseLink
 mvn test -Peclipselink -Dtest.profiles=eclipselink,mysql # EclipseLink + a database

@@ -170,21 +170,27 @@ is the way around it.
 
 ### Tested
 
-202 tests, on all three providers and against six databases, all of it on Spring Boot 3.5 and
-Hibernate 6.6:
+202 tests, on all three providers and against eight databases — 23 runs, since EclipseLink ships
+no SQLite platform — all of it on Spring Boot 3.5 and Hibernate 6.6:
 
-| Provider | H2 | PostgreSQL | MySQL | SQL Server | SQLite | Oracle |
-| --- | --- | --- | --- | --- | --- | --- |
-| Hibernate | 202 | 202 | 202 | 202, 1 failed | 202, 3 failed | 202, 4 failed |
-| Criteria API alone | 202, 6 skipped | 202, 6 skipped | 202, 6 skipped | 202, 6 skipped, 1 failed | 202, 6 skipped, 3 failed | 202, 6 skipped |
-| EclipseLink | 202, 39 skipped | 202, 39 skipped | 202, 39 skipped | 202, 39 skipped | not supported | 202, 39 skipped, 2 failed |
+| Provider | H2 | PostgreSQL | MySQL | MariaDB | SQL Server | Oracle | Db2 | SQLite |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Hibernate | 202 | 202 | 202 | 202 | 202, 1 failed | 202, 4 failed | 202 | 202, 3 failed |
+| Criteria API alone | 202, 6 skipped | 202, 6 skipped | 202, 6 skipped | 202, 6 skipped | 202, 6 skipped, 1 failed | 202, 6 skipped | 202, 6 skipped | 202, 6 skipped, 3 failed |
+| EclipseLink | 202, 39 skipped | 202, 39 skipped | 202, 39 skipped | 202, 39 skipped | 202, 39 skipped | 202, 39 skipped, 2 failed | 202, 39 skipped | not supported |
 
-Against H2 2.3.232, SQLite 3.49.1, MySQL 9.6.0, PostgreSQL 16.13, SQL Server 2022 (16.00.4265) and
-Oracle AI Database 26ai Free (23.26.3.0.0), each on the driver Spring Boot 3.5 manages, and
-EclipseLink 4.0.4.
+Against H2 2.3.232, PostgreSQL 17.11, MySQL 9.6.0, MariaDB 11.8.9, SQL Server 2022 (16.00.4295),
+Oracle AI Database 26ai Free (23.26.1.0.0), Db2 12.1 and SQLite 3.49.1, each on the driver
+Spring Boot 3.5 manages, and EclipseLink 4.0.4.
+
+**MariaDB and Db2 are new to the matrix**, and both took every test on every provider they run on
+without a line of the library changing.
 
 What is skipped is what the provider does not reach, what failed is what the database, or the
-provider on that database, does not take, and neither is the library answering wrongly.
+provider on that database, does not take, and neither is the library answering wrongly. The Oracle
+derived-table failures are worth one note: Hibernate writes `group by c0`, its own internal alias
+rather than the select item's, and it does so on 6.6 and on 7.4 alike — so this is no regression of
+either, and the trigger is Oracle 23, from which a `group by` may name a select item by its alias.
 
 ## [1.0.0-RC1]
 
