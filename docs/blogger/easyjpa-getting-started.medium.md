@@ -151,7 +151,8 @@ Spring Boot 3.0 and earlier is not supported.
 └──────────────────────────────────┬──────────────────────────────────────────┘
                                    │
 ┌──────────────────────────────────▼──────────────────────────────────────────┐
-│  DATABASE    H2 · PostgreSQL · MySQL · SQL Server · SQLite · Oracle         │
+│  DATABASE   H2 · PostgreSQL · MySQL · MariaDB · SQL Server                  │
+│             Oracle · Db2 · SQLite                                           │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -496,25 +497,33 @@ Pagination counting falls back from a derived table to `count(distinct …)`.
 
 ### Database coverage
 
-The same 202 tests run on three providers against six databases.
+The same 201 tests run on three providers against eight databases — 23 combinations, since
+EclipseLink ships no SQLite platform.
 
-**H2 2.3.232, PostgreSQL 16.13 and MySQL 9.6.0** — everything passes, on all three providers.
+**Five take everything, on all three providers:** H2 2.4.240, PostgreSQL 17.11, MySQL 9.6.0,
+MariaDB 11.8.9 and Db2 12.1. MariaDB and Db2 were added last and passed without a line of library
+code changing.
 
-**SQL Server 16.00.4265** — one failure on Hibernate and on the plain Criteria API: `+` is read by
-its first operand, so a `max(price)` asked for as text is taken for arithmetic. Cast it first.
-EclipseLink passes.
+**SQL Server 16.00.4295** — one failure on Hibernate and on the plain Criteria API. `+` is read by
+its first operand, so a `max(price)` the test asks for as text is taken for arithmetic. Cast it
+first. EclipseLink passes, because it skips that test.
 
-**SQLite 3.49.1** — three failures: no quantified subquery, no `repeat`, and no date type.
-EclipseLink ships no SQLite platform at all.
+**Oracle 26ai Free (23.26.1)** — four derived-table failures on Hibernate 7.4, which writes
+`group by c0`, its own internal alias rather than the select item's, so Oracle answers
+`ORA-00904`; the same tests pass once the dialect is told it is Oracle 21. Two more on EclipseLink,
+which writes no column aliases and then paginates by wrapping as `select a.* from (…) a` — Oracle
+answers `ORA-00918` because the inner query has two columns of the same name. The plain Criteria
+API passes everything.
 
-**Oracle 23.26.3** — four derived-table failures on Hibernate 7.4, which writes `group by c0`, its
-internal alias rather than the select item's; the same tests pass once the dialect is told it is
-Oracle 21. Two paginated-`Tuple` failures on EclipseLink, which writes no aliases and then wraps as
-`select a.* from (…) a`, and Oracle rejects two columns of the same name. The plain Criteria API
-passes.
+**SQLite 3.53.2.1** — three failures from SQL that SQLite does not have: no quantified subquery, no
+`repeat`, no date type of its own. A fourth, on Hibernate only, is an open issue in this project's
+own test profile rather than a limit of SQLite: the profile maps the ids to `IDENTITY`, Hibernate
+renders the column type for four of the five tables and nothing at all for one, and SQLite fills a
+key in only for a column declared `INTEGER` — while its `PRIMARY KEY` does not imply `NOT NULL`, so
+those keys quietly come back null.
 
-Every one of those belongs to the database or to the provider on that database, never to a query
-EasyJPA built.
+Apart from that last one, every failure belongs to the database, to the provider on that database,
+or to how the test itself is written — never to a query EasyJPA built.
 
 ---
 
@@ -562,7 +571,7 @@ column, comparison or nested — all the same way.
 **Provider gaps are a `boolean`, not a stack trace.** `JpaProviders.getProvider().supportsXxx()`
 answers before you build.
 
-**Tested where it matters** — 202 tests, three providers, six databases, and every documented
+**Tested where it matters** — 201 tests, three providers, eight databases, and every documented
 failure attributed to the database or the provider rather than hidden.
 
 **Zero configuration.** No properties; name one factory bean and extend `EntityDao`.

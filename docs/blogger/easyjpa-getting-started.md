@@ -143,7 +143,8 @@ The version line follows the Spring Boot line, and the two are maintained apart:
 └──────────────────────────────────┬──────────────────────────────────────────┘
                                    │
 ┌──────────────────────────────────▼──────────────────────────────────────────┐
-│  DATABASE    H2 · PostgreSQL · MySQL · SQL Server · SQLite · Oracle         │
+│  DATABASE   H2 · PostgreSQL · MySQL · MariaDB · SQL Server                  │
+│             Oracle · Db2 · SQLite                                           │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -426,16 +427,20 @@ Feature-level. No timings are claimed — nothing here is a benchmark.
 
 ### Provider and database coverage
 
-The same 202 tests run on three providers against six databases.
+The same 201 tests run on three providers against eight databases — 23 combinations, since
+EclipseLink ships no SQLite platform.
 
-| | H2 2.3 | PostgreSQL 16 | MySQL 9.6 | SQL Server 16 | SQLite 3.49 | Oracle 23 |
-| --- | --- | --- | --- | --- | --- | --- |
-| Hibernate | ✅ | ✅ | ✅ | ⚠️ 1 | ⚠️ 3 | ⚠️ 4 |
-| Criteria API alone | ✅ | ✅ | ✅ | ⚠️ 1 | ⚠️ 3 | ✅ |
-| EclipseLink | ✅ | ✅ | ✅ | ✅ | ❌ no platform | ⚠️ 2 |
+| | H2 | PostgreSQL | MySQL | MariaDB | SQL Server | Oracle | Db2 | SQLite |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Version | 2.4.240 | 17.11 | 9.6.0 | 11.8.9 | 16.00.4295 | 26ai | 12.1 | 3.53.2.1 |
+| Hibernate 7.4.5 | ✅ | ✅ | ✅ | ✅ | ⚠️ 1 | ⚠️ 4 | ✅ | ⚠️ 4 |
+| Criteria API alone | ✅ | ✅ | ✅ | ✅ | ⚠️ 1 | ✅ | ✅ | ⚠️ 3 |
+| EclipseLink 5.0.1 | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️ 2 | ✅ | ❌ |
 
-Each ⚠️ belongs to the database or to the provider on that database, never to a query EasyJPA built.
-The README names every one of them.
+Five of the eight take every test on every provider. Of the rest, every ⚠️ belongs to the database,
+to the provider on that database, or to how the test itself is written — never to a query EasyJPA
+built. The README names each one, including one open issue in the project's own SQLite test
+profile.
 
 ## 9. Limitations & Trade-offs
 
@@ -466,7 +471,7 @@ The README names every one of them.
 7. **Aggregates join once**, as a derived table, instead of running a correlated subquery per row.
 8. **Provider gaps are a `boolean`, not a stack trace.** `JpaProviders.getProvider().supportsXxx()`
    answers before you build.
-9. **Tested where it matters** — 202 tests, three providers, six databases, and every documented
+9. **Tested where it matters** — 201 tests, three providers, eight databases, and every documented
    failure attributed to the database or the provider rather than hidden.
 10. **Zero configuration.** No properties; name one factory bean and extend `EntityDao`.
 

@@ -75,19 +75,30 @@ gave it — so until Hibernate has that, an `OracleDialect` subclass built with
 
 ### Tested
 
-201 tests, on all three providers and against six databases, all of it on Spring Boot 4.1:
+201 tests, on all three providers and against eight databases — 23 runs, since EclipseLink ships
+no SQLite platform — all of it on Spring Boot 4.1:
 
-| Provider | H2 | PostgreSQL | MySQL | SQL Server | SQLite | Oracle |
-| --- | --- | --- | --- | --- | --- | --- |
-| Hibernate | 201 | 201 | 201 | 201, 1 failed | 201, 4 failed | 201, 4 failed |
-| Criteria API alone | 201, 6 skipped | 201, 6 skipped | 201, 6 skipped | 201, 6 skipped, 1 failed | 201, 6 skipped, 3 failed | 201, 6 skipped |
-| EclipseLink | 201, 39 skipped | 201, 39 skipped | 201, 39 skipped | 201, 39 skipped | not run | 201, 39 skipped, 2 failed |
+| Provider | H2 | PostgreSQL | MySQL | MariaDB | SQL Server | Oracle | Db2 | SQLite |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Hibernate | 201 | 201 | 201 | 201 | 201, 1 failed | 201, 4 failed | 201 | 201, 4 failed |
+| Criteria API alone | 201, 6 skipped | 201, 6 skipped | 201, 6 skipped | 201, 6 skipped | 201, 6 skipped, 1 failed | 201, 6 skipped | 201, 6 skipped | 201, 6 skipped, 3 failed |
+| EclipseLink | 201, 39 skipped | 201, 39 skipped | 201, 39 skipped | 201, 39 skipped | 201, 39 skipped | 201, 39 skipped, 2 failed | 201, 39 skipped | not run |
 
-Against H2 2.4.240, SQLite 3.53.2, MySQL 9.6.0, PostgreSQL 16.13, SQL Server 2022 (16.00.4265) and
-Oracle AI Database 26ai Free (23.26.3.0.0), each on the driver Spring Boot 4.1 manages.
+Against H2 2.4.240, PostgreSQL 17.11, MySQL 9.6.0, MariaDB 11.8.9, SQL Server 2022 (16.00.4295),
+Oracle AI Database 26ai Free (23.26.1.0.0), Db2 12.1 and SQLite 3.53.2.1, each on the driver
+Spring Boot 4.1 manages.
 
-What is skipped is what the provider does not reach, what failed is what the database, or the
-provider on that database, does not take, and neither is the library answering wrongly.
+**MariaDB and Db2 are new to the matrix**, and both took every test on every provider they run on
+without a line of the library changing.
+
+What is skipped is what the provider does not reach, and what failed is what the database, or the
+provider on that database, does not take — with one exception worth naming rather than hiding: the
+fourth SQLite failure on Hibernate is an open issue in this project's own test profile. The profile
+maps the ids to `IDENTITY`, Hibernate renders the column type for four of the five tables and
+nothing at all for `example_order_product`, and SQLite fills a key in only for a column declared
+`INTEGER` while its `PRIMARY KEY` does not imply `NOT NULL` — so those keys come back null and a
+`count(id)` over them is 0. The query the library built is correct; the same SQL returns the right
+counts against a schema whose key column carries a type.
 
 ## [1.0.0] - 2026-08-17
 
